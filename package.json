@@ -1,10 +1,13 @@
 {
-  "name": "canvasTest",
+  "name": "onlinePictionary",
   "version": "0.0.1",
-  "repository": "https://github.com/damonho/canvasTest",
+  "repository": "https://github.com/benjmo/op",
   "dependencies": {
     "express": "~4.15.2",
     "pug": "^2.0.0-rc.4",
     "socket.io": "^2.0.3"
+  },
+  "scripts": {
+    "start": "node src/index.js"
   }
 }
