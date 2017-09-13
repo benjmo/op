@@ -1,8 +1,11 @@
-var app = require('express')();
-var path = require('path');
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+const express = require('express');
+const app     = express();
+const path    = require('path');
+const http    = require('http').Server(app);
+const io      = require('socket.io')(http);
+const game    = require('./game')(io);
 
+app.use(express.static('static'));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
 
@@ -11,19 +14,14 @@ app.get('/', function(req, res){
 });
 app.get('/draw/', function(req, res){
     res.render('index',{drawing: true});
-}).get('/drawing.js', function(req,res) {
-    res.sendFile(__dirname + '/drawing.js');
 });
+
 io.on('connection', function(socket){
     console.log('a user connected');
-    socket.on('draw', function(data) {
-        console.log(data);
-        io.emit('draw', data);
-    })
+    socket.on('draw', game.draw);
 });
 
-var port = process.env.PORT || 3000;
-
+const port = process.env.PORT || 3000;
 http.listen(port, function(){
     console.log('listening on *:'+port);
 });
