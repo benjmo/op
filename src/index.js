@@ -18,7 +18,7 @@ app.get('/draw/', function(req, res){
 });
 
 /* top level socket.io stuff goes here */
-io.on('connection', function(socket){
+io.on('connection', function(socket) {
     console.log('a user connected');
     socket.on('draw', game.draw);
 });
