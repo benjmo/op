@@ -9,6 +9,7 @@ app.use(express.static('static'));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
 
+/* Routes all go here */
 app.get('/', function(req, res){
     res.render('index');
 });
@@ -16,6 +17,7 @@ app.get('/draw/', function(req, res){
     res.render('index',{drawing: true});
 });
 
+/* top level socket.io stuff goes here */
 io.on('connection', function(socket){
     console.log('a user connected');
     socket.on('draw', game.draw);
