@@ -1,0 +1,19 @@
+doctype html
+html
+    head
+        title= title
+        link(rel='stylesheet', href='/stylesheets/style.css')
+        link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+        script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js')
+        script(src='/socket.io/socket.io.js')
+    body
+        div.container
+            h1= title
+            p Welcome to #{title}
+            canvas#myDrawing(height=500,width=500,style={border:'1px solid #000000'})
+                p Your browser doesn't support canvas
+            script(src='/drawing.js')
+            script.
+                $(document).ready(function() {
+                    initialise($("#myDrawing"),#{drawing});
+                });
