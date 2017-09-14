@@ -4,7 +4,7 @@ block content
     p Welcome to #{title}
     canvas#myDrawing(height=500,width=500,style={border:'1px solid #000000'})
         p Your browser doesn't support canvas
-    script(src='/drawing.js')
+    script(src='/js/drawing.js')
     script.
         $(document).ready(function() {
             let socket = io();
