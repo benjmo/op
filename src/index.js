@@ -16,11 +16,15 @@ app.get('/', function(req, res){
 app.get('/draw/', function(req, res){
     res.render('index',{drawing: true});
 });
+app.get('/message/', function(req, res) {
+   res.render('messages');
+});
 
 /* top level socket.io stuff goes here */
 io.on('connection', function(socket) {
     console.log('a user connected');
     socket.on('draw', game.draw);
+    socket.on('chat_message', game.chat_message);
 });
 
 const port = process.env.PORT || 3000;

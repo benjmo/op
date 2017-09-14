@@ -1,7 +1,6 @@
-function initialise(drawingCanvas, draw) {
+function initialiseCanvas(drawingCanvas, socket, draw) {
   let context = drawingCanvas[0].getContext('2d');
   if (context) {
-    const socket = io();
     let clickX = [];
     let clickY = [];
     let clickDrag = [];

@@ -1,0 +1,13 @@
+extends layout
+block scripts
+    link(rel='stylesheet', href='/stylesheets/messenger.css')
+
+block content
+    div.messenger
+        ul#messages
+        form.form-inline#m_form
+            input#m
+            button.btn.btn-default Send
+        script(src='/messenger.js')
+        script.
+            initMessenger($('#messages'),$('#m_form'),$('#m'),io());
