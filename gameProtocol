@@ -1,0 +1,15 @@
+client
+snd:
+	draw: when canvas is drawn on
+	chat-message: when user sends a message
+rsv:
+	draw: draw data on canvas
+	chat-message: display message
+
+server
+snd:
+	draw: when data is received from 'draw' event
+	chat-message: when data is received from 'chat-message' event
+rsv:
+	draw: send data to all users
+	chat-message: send data to all users
