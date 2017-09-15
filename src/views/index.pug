@@ -1,21 +1,21 @@
 extends layout
 block content
-    div.row
-        div.col-md-3
-            div.messenger
-        div.col-md-6
-            h1 Online Pictionary
-            p Welcome to Online Pictionary
-            canvas#myDrawing(height=500,width=500,style={border:'1px solid #000000'})
-                p Your browser doesn't support canvas
+  div.row
+    div.col-md-3
+      div.messenger
+    div.col-md-6
+      h1 Online Pictionary
+      p Welcome to Online Pictionary
+      canvas#myDrawing(height=500,width=500,style={border: '1px solid #000000'})
+        p Your browser doesn't support canvas
 
-    script(src='/js/drawing.js')
-    script(src='/js/messenger.js')
-    script.
-        $(document).ready(function() {
-            let socket = io();
-            if ("#{game}"!= "")
-                socket.emit('join_room','#{game}');
-            $("#myDrawing").pictWhiteboard({socket:socket,draw:#{drawing || false}});
-            $('.messenger').pictMessenger({socket:socket,height:60});
-        });
+  script(src='/js/drawing.js')
+  script(src='/js/messenger.js')
+  script.
+    $(document).ready(function () {
+      let socket = io();
+      if ("#{game}" != "")
+        socket.emit('join_room', '#{game}');
+      $("#myDrawing").pictWhiteboard({socket: socket, draw: #{drawing || false}});
+      $('.messenger').pictMessenger({socket: socket, height: 60});
+    });
