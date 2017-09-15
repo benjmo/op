@@ -11,7 +11,10 @@ app.set('view engine', 'pug');
 
 /* Routes all go here */
 app.get('/', function(req, res){
-    res.render('index');
+    res.render('index',);
+});
+app.get('/play/:id', function(req, res){
+    res.render('index', {game: req.params.id, drawing: true});
 });
 app.get('/draw/', function(req, res){
     res.render('index',{drawing: true});
@@ -23,8 +26,9 @@ app.get('/message/', function(req, res) {
 /* top level socket.io stuff goes here */
 io.on('connection', function(socket) {
     console.log('a user connected');
-    socket.on('draw', game.draw);
-    socket.on('chat_message', game.chat_message);
+    socket.on('join_room', (data) => {game.join_room(socket,data)})
+    socket.on('draw', (data) => game.draw(socket, data));
+    socket.on('chat_message',  (data) => game.chat_message(socket, data));
 });
 
 const port = process.env.PORT || 3000;
