@@ -11,23 +11,23 @@ app.set('view engine', 'pug');
 
 /* Routes all go here */
 app.get('/', function(req, res){
-    res.render('index');
+  res.render('index');
 });
 app.get('/draw/', function(req, res){
-    res.render('index',{drawing: true});
+  res.render('index',{drawing: true});
 });
 app.get('/message/', function(req, res) {
-   res.render('messages');
+  res.render('messages');
 });
 
 /* top level socket.io stuff goes here */
 io.on('connection', function(socket) {
-    console.log('a user connected');
-    socket.on('draw', game.draw);
-    socket.on('chat_message', game.chat_message);
+  console.log('a user connected');
+  socket.on('draw', game.draw);
+  socket.on('chat_message', game.chat_message);
 });
 
 const port = process.env.PORT || 3000;
 http.listen(port, function(){
-    console.log('listening on *:'+port);
+  console.log('listening on *:'+port);
 });
