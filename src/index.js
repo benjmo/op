@@ -11,7 +11,7 @@ app.set('view engine', 'pug');
 
 /* Routes all go here */
 app.get('/', function (req, res) {
-  res.render('index',);
+  res.render('index');
 });
 app.get('/play/:id', function (req, res) {
   res.render('index', {game: req.params.id, drawing: true});
