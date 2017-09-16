@@ -12,10 +12,11 @@ block content
   script(src='/js/drawing.js')
   script(src='/js/messenger.js')
   script.
+    let whiteboard;
     $(document).ready(function () {
       let socket = io();
       if ("#{game}" != "")
         socket.emit('join_room', '#{game}');
-      $("#myDrawing").pictWhiteboard({socket: socket, draw: #{drawing || false}});
-      $('.messenger').pictMessenger({socket: socket, height: 60});
+      whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, draw: #{drawing || false}});
+      let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
     });
