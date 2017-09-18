@@ -64,21 +64,25 @@
           }
         };
 
-        /*
-         * Calculates offset of canvas relative to whole page
-         */
-        let offsetLeft = 0, offsetTop = 0, a = this.element;
-        while (a) {
-          offsetLeft += a.offsetLeft;
-          offsetTop += a.offsetTop;
-          a = a.offsetParent;
-        }
+        let offsetLeft = 0, offsetTop = 0; // relative to whole page
 
         /*
          * Listeners for mouse events
          */
         if (this.options.draw) {
           $(this.element).mousedown(function (e) {
+            /*
+             * Calculates offset of canvas relative to whole page
+             * Check every mousedown in case of resize
+             */
+            let a = this;
+            offsetLeft = 0; offsetTop = 0;
+            while (a) {
+              offsetLeft += a.offsetLeft;
+              offsetTop += a.offsetTop;
+              a = a.offsetParent;
+            }
+
             const mouseX = e.pageX - offsetLeft;
             const mouseY = e.pageY - offsetTop;
             // console.log("MD X:" + mouseX + " Y:" + mouseY)
