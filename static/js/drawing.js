@@ -137,7 +137,11 @@
     /*
      * TODO: Implement clear Function
      */
-    clear: function() {}
+    clear: function() {
+      this.clicks = [];
+      let context = this.element.getContext('2d');
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+    }
   };
 
   /*
