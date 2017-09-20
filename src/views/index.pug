@@ -25,5 +25,6 @@ block content
       let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
       $('#clear').click(function() {
         whiteboard.clear();
+        socket.emit('draw', {clear: true});
       });
     });

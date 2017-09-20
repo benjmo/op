@@ -93,9 +93,14 @@
         }
 
         /*
-         * Listener for draw's from other users
+         * Listener for drawing-related actions from other users
          */
         this.options.socket.on('draw', function (data) {
+          if (data.clear) {
+            // Drawing cleared by drawer
+            plugin.clear();
+            return;
+          }
           plugin.addClick(data.x, data.y, data.drag);
           plugin.redraw();
         });
