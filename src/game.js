@@ -6,57 +6,52 @@ let rooms = {};
 /*
  * Attempt to handle lobbies/rooms
  */
-const join_room = (io, socket, data) => {
-  console.log(data)
-  socket.join(data, () => {
+const join_room = function (data) {
+  this.socket.join(data, () => {
     if (!(data in rooms))
       rooms[data] = [];
-    rooms[data].push(socket.id);
-    socket.broadcast.to(data).emit('chat_message', 'a new user has joined the room'); // broadcast to everyone in the room
+    rooms[data].push(this.socket.id);
+    this.socket.broadcast.to(data).emit('chat_message', 'a new user has joined the room'); // broadcast to everyone in the room
   });
 };
 
 /**
  * Handle user drawing
  */
-const draw = (io, socket, data) => {
-  if (Object.keys(socket.rooms).length > 1) {
-    for (room of Object.keys(socket.rooms))
-      if (room !== socket.id)
-        socket.broadcast.to(room).emit('draw', data);
-  } else
-    io.emit('draw', data);
-
+const draw = function (data) {
+  for (let room of Object.keys(this.socket.rooms))
+    this.socket.broadcast.to(room).emit('draw', data);
 };
 
 /**
  * Handle messaging
  */
-const chat_message = (io, socket, data) => {
+const chat_message = function (data) {
+  let socket = this.socket, io = this.io;
   if (data.match(/^!guess /)) {
     let guess = data.replace(/^!guess /, "");
-    for (room of Object.keys(socket.rooms))
-      if (room !== socket.id)
-        io.to(room).emit('chat_message', "You Guessed ${guess}");
+    for (let room of Object.keys(socket.rooms))
+      socket.broadcast.to(room).emit('chat_message', `Someone Guessed ${guess}`); //to everyone else
+    socket.emit('chat_message', `You Guessed ${guess}`) //to self
   } else if (data.match(/^!join /)) {
     let room = data.replace(/^!join /, "");
     join_room(io, socket, room);
   } else {
-    console.log(Object.keys(socket.rooms))
-    if (Object.keys(socket.rooms).length > 1) {
-      for (room of Object.keys(socket.rooms))
-        if (room !== socket.id) {
-          io.to(room).emit('chat_message', data);
-        }
-    } else
-      io.emit('chat_message', data);
+    for (let room of Object.keys(socket.rooms))
+      if (room != socket.id)
+        io.to(room).emit('chat_message', data);
   }
 };
 
 module.exports = function (io) {
   return {
-    chat_message: chat_message.bind(this, io),
-    draw: draw.bind(this, io),
-    join_room: join_room.bind(this, io),
+    create_client: function (socket) {
+      return {io,
+        socket,
+        chat_message,
+        draw,
+        join_room
+      }
+    }
   };
 };

@@ -26,9 +26,10 @@ app.get('/message/', function (req, res) {
 /* top level socket.io stuff goes here */
 io.on('connection', function (socket) {
   console.log('a user connected');
-  socket.on('join_room', (data) => {game.join_room(socket, data)});
-  socket.on('draw', (data) => game.draw(socket, data));
-  socket.on('chat_message', (data) => game.chat_message(socket, data));
+  let client = game.create_client(socket);
+  socket.on('join_room', (data) => client.join_room(data));
+  socket.on('draw', (data) => client.draw(data));
+  socket.on('chat_message', (data) => client.chat_message(data));
 });
 
 const port = process.env.PORT || 3000;
