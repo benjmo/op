@@ -37,7 +37,7 @@ const check_guess = function(word, guess) {
   for (const c of Object.keys(wc)) {
     diff += Math.abs(wc[c]);
   }
-  return (diff > 1);
+  return (diff <= 1);
 };
 
 module.exports = {
