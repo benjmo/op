@@ -23,21 +23,34 @@ const check_guess = function(word, guess) {
   */
 
   // minor typo, up to one extra character and up to one missing character
-  let wc = {};
+  let i1 = 0, i2 = 0;
   let diff = 0;
-  // add all the letters of word1
-  for (const c of word) {
-    wc[c] = wc[c] ? wc[c] + 1 : 1;
+  // count through letters of each word to check extra letters
+  while (i1 < word.length && i2 < guess.length) {
+    if (word[i1] === guess[i2]) {
+      i1++;
+      i2++;
+    } else { 
+      // check for extra letter in word
+      if (i1 < word.length - 1 && word[i1+1] === guess[i2]) {
+        i1++;
+      // check for extra letter in guess
+      } else if (i2 < guess.length - 1 && word[i1] === guess[i2+1]) {
+        i2++;
+      // multiple wrong letters, just skip over them
+      } else {
+        i1++;
+        i2++;
+      }
+      diff++;
+    }
   }
-  // remove all the letters of word2
-  for (const c of guess) {
-    wc[c] = wc[c] ? wc[c] - 1 : -1;
-  }
-  // missing letters have value 1, extra letters have value -1, sum them
-  for (const c of Object.keys(wc)) {
-    diff += Math.abs(wc[c]);
-  }
-  return (diff > 1);
+  // reached the end: add the characters we haven't seen yet
+  diff += word.length - i1;
+  diff += guess.length - i2;
+  return diff <= 1;
+
+  //@todo plurals y -> ies (eg. 'bunny' === 'bunnies')
 };
 
 module.exports = {
