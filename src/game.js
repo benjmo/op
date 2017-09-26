@@ -94,7 +94,15 @@ const next_game = function() {
   },5000);
 };
 
-const add_user = function(user, name = "anon"+Math.trunc(Math.random()*10000)) {
+/**
+ * Usernames
+ */
+const get_username = function () {
+  var username = prompt("Please enter your name:", "anon"+Math.trunc(Math.random()*10000));
+  return username;
+};
+
+const add_user = function(user, name = get_username() /*"anon"+Math.trunc(Math.random()*10000)*/) {
   this.users.push(user);
   this.names[user] = name;
   this.score[user] = 0;
