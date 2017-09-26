@@ -1,17 +1,38 @@
+const CORRECT_GUESS = 0;
+const INCORRECT_GUESS = 1;
+const CLOSE_GUESS = 2;
+
+
 /**
  * Checks if two words are the same, or close enough to the same
  * @param {String} word
  * @param {String} guess
  */
 const checkGuess = function(word, guess) {
+  guess = guess.trim();
+  word = word.trim();
   // not case sensitive
   guess = guess.toLowerCase();
   word = word.toLowerCase();
 
-  // exact match
   if (word === guess) {
-    return true;
+    console.log("correct guess " + word);
+    return CORRECT_GUESS;
   }
+
+  if (guess.includes(word)) {
+    // word is substring of guess
+    return CORRECT_GUESS;
+  }
+
+  if (closeGuess(word, guess)) {
+    // guess is 'close' to the word
+    return CLOSE_GUESS;
+  }
+
+  return INCORRECT_GUESS;
+
+  // shouldn't need below code due to .includes checking for substring?
 
   // guess is compound word that contains the actual word, or vice versa
   // for compound words (eg. 'doorway' === 'door'), or multiple guesses at once (eg. 'cow bull' === 'cow')
@@ -62,5 +83,8 @@ const closeGuess = function(word, guess) {
 
 module.exports = {
   checkGuess,
-  closeGuess
+  closeGuess,
+  CORRECT_GUESS,
+  INCORRECT_GUESS,
+  CLOSE_GUESS
 };

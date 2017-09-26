@@ -51,19 +51,18 @@ const clearDrawing = function () {
 const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
   let drawing = this.room.currentDrawer() == this.socket.id;
-  if (room.checkGuess(data,socket.id)) {
+  if (room.checkGuess(data, socket.id) == util.CORRECT_GUESS) {
     if (drawing) {
       socket.emit('chatMessage',"Please don't reveal the word in chat");
     } else {
-      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
-      socket.emit('chatMessage', `You guessed ${data}`) //to self
+      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed the word: ${data}.`); //to everyone else
+      socket.emit('chatMessage', `You guessed the word: ${data}!`) //to self
     }
-  } else if (room.closeGuess(data)) {
+  } else if (room.checkGuess(data, socket.id) == util.CLOSE_GUESS) {
     if (drawing) {
       socket.emit('chatMessage',"Please don't reveal the word in chat");
     } else {
-      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
-      socket.emit('chatMessage', `Your guess ${data} is close`) //to self
+      socket.emit('chatMessage', `${data} is close!`) //to self
     }
   } else {
     io.to(room.id).emit('chatMessage', `${this.name}: ${data}`);
@@ -99,15 +98,13 @@ const currentDrawer = function() {
 };
 
 const checkGuess = function(guess,id) {
+  drawing = (this.drawer == id);
+
   let result = util.checkGuess(this.currentWord,guess);
-  if (result) {
+  if (result == util.CORRECT_GUESS && !drawing) {
     this.endRound(id);
   }
   return result;
-};
-
-const closeGuess = function(guess) {
-  return util.closeGuess(this.currentWord,guess);
 };
 
 const endRound = function(winner) {
@@ -229,8 +226,7 @@ Room.prototype = {
   addClick,
   clearClicks,
   endRound,
-  checkGuess,
-  closeGuess
+  checkGuess
 };
 
 module.exports = function (io) {
