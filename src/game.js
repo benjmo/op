@@ -114,6 +114,7 @@ const endRound = function(winner) {
   if (winner) {
     let name = this.names[winner];
     this.score[name]++;
+    this.io.to(this.id).emit('updateScore',this.score);
     if (this.score[name] >= WIN_SCORE) {
       this.state = GAME_OVER;
     } else {

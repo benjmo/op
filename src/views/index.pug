@@ -68,6 +68,8 @@ block content
         whiteboard.load(data.clicks);
       }).on('newUser', (score) => {
         updateScore(score);
+      }).on('updateScore', (score) => {
+        updateScore(score);
       }).on('nextRound', (data) => {
         if (data)
           updateScore(data.score);
