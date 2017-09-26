@@ -1,30 +1,36 @@
 const chai = require('chai');
 const expect = chai.expect;
 const util = require('../src/util');
+const CORRECT_GUESS = util.CORRECT_GUESS;
+const INCORRECT_GUESS = util.INCORRECT_GUESS;
+const CLOSE_GUESS = util.CLOSE_GUESS;
 
 describe('Check Guess', () => {
-  it('should return true for equal words', () => {
-    expect(util.check_guess('antelope', 'antelope')).to.equal(true);
+  it('should return CORRECT_GUESS for equal words', () => {
+    expect(util.checkGuess('antelope', 'antelope')).to.equal(CORRECT_GUESS);
   });
-  it('should return true if a letter is added', () => {
-    expect(util.check_guess('antelope', 'aantelope')).to.equal(true);
-    expect(util.check_guess('antelope', 'antelopme')).to.equal(true);
-    expect(util.check_guess('antelopes', 'antelope')).to.equal(true);
+  it('should return CORRECT_GUESS if word is a substring of guess', () => {
+    expect(util.checkGuess('antelope', 'fanteloped')).to.equal(CORRECT_GUESS);    
+    expect(util.checkGuess('antelope', 'antelope on the mat')).to.equal(CORRECT_GUESS);
+    expect(util.checkGuess('antelope', 'fanteloped on the mat')).to.equal(CORRECT_GUESS);
   });
-  it('should return true if a letter is removed', () => {
-    expect(util.check_guess('antelope', 'antelop')).to.equal(true);
-    expect(util.check_guess('antlope', 'antelope')).to.equal(true);
+  it('should return CLOSE_GUESS if a letter is added in the middle', () => {
+    expect(util.checkGuess('antelope', 'antelopme')).to.equal(CLOSE_GUESS);
   });
-  it('should return true if a letter is swapped', () => {
-    expect(util.check_guess('antelope', 'anyelope')).to.equal(true);
-    expect(util.check_guess('antelope', 'antelopr')).to.equal(true);
-    expect(util.check_guess('sntelope', 'antelope')).to.equal(true);
+  it('should return CLOSE_GUESS if a letter is removed', () => {
+    expect(util.checkGuess('antelope', 'antelop')).to.equal(CLOSE_GUESS);
+    expect(util.checkGuess('antlope', 'antelope')).to.equal(CLOSE_GUESS);
+  });
+  it('should return CLOSE_GUESS if a letter is swapped', () => {
+    expect(util.checkGuess('antelope', 'anyelope')).to.equal(CLOSE_GUESS);
+    expect(util.checkGuess('antelope', 'antelopr')).to.equal(CLOSE_GUESS);
+    expect(util.checkGuess('sntelope', 'antelope')).to.equal(CLOSE_GUESS);
 });
-  it('should return false if words are very different', () =>  {
-    expect(util.check_guess('antelope', 'wildebeest')).to.equal(false);
+  it('should return INCORRECT_GUESS if words are very different', () =>  {
+    expect(util.checkGuess('antelope', 'wildebeest')).to.equal(INCORRECT_GUESS);
   });
-  it('should return false if the words are a bit too different', () => {
-    expect(util.check_guess('antelope', 'antelo')).to.equal(false);
-    expect(util.check_guess('antelope', 'antelopqq')).to.equal(false);
+  it('should return INCORRECT_GUESS if the words are a bit too different', () => {
+    expect(util.checkGuess('antelope', 'antelo')).to.equal(INCORRECT_GUESS);
+    expect(util.checkGuess('antelope', 'antelopqq')).to.equal(INCORRECT_GUESS);
 });
 });
