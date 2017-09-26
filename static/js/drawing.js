@@ -96,7 +96,7 @@
          */
         socket.on('draw', (data) => {
           if (data.clear) {
-            // Drawing cleared by drawer
+            // Drawing cleared by drawer, so we have to clear our board locally
             plugin.clear();
             return;
           }
@@ -163,7 +163,7 @@
     },
 
     /*
-     * TODO: Implement clear Function
+     * Clears the board locally
      */
     clear: function() {
       this.clicks = [];
