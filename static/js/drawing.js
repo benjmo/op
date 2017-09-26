@@ -60,8 +60,6 @@
           const mouseY = (e.pageY - offsetTop) / width;
           // console.log("MD X:" + mouseX + " Y:" + mouseY)
           paint = true;
-          plugin.addClick(mouseX, mouseY);
-          plugin.redraw();
           socket.emit('draw', {
             x: mouseX,
             y: mouseY,
@@ -75,8 +73,6 @@
             const mouseX = (e.pageX - offsetLeft) / height;
             const mouseY = (e.pageY - offsetTop) / width;
             // console.log("MM X:" + mouseX + " Y:" + mouseY)
-            plugin.addClick(mouseX, mouseY, true);
-            plugin.redraw();
             socket.emit('draw', {
               x: mouseX,
               y: mouseY,
@@ -95,13 +91,11 @@
          * Listener for drawing-related actions from other users
          */
         socket.on('draw', (data) => {
-          if (data.clear) {
-            // Drawing cleared by drawer, so we have to clear our board locally
-            plugin.clear();
-            return;
-          }
           plugin.addClick(data.x, data.y, data.drag);
           plugin.redraw();
+        }).on('clear', (data) => {
+          // Drawing cleared by drawer, so we have to clear our board locally
+          plugin.clear();
         }).on('nextRound', (data) => {
           console.log(data);
           let interval;
@@ -133,9 +127,9 @@
     /*
      * Adds a mouse movement to the clicks array
      */
-    addClick: function (x, y, dragging) {
+    addClick: function (x, y, drag) {
       this.clicks.push({
-        x, y, dragging
+        x, y, drag
       })
     },
 
@@ -151,7 +145,7 @@
       let height = this.element.height, width = this.element.width;
       for (let i = 0; i < this.clicks.length; i++) {
         context.beginPath();
-        if (this.clicks[i].dragging && i) {
+        if (this.clicks[i].drag && i) {
           context.moveTo(this.clicks[i - 1].x * width, this.clicks[i - 1].y * height);
         } else {
           context.moveTo(this.clicks[i].x * width - 1, this.clicks[i].y * height);
@@ -169,6 +163,14 @@
       this.clicks = [];
       let context = this.element.getContext('2d');
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+    },
+
+    /*
+     * Load a drawing to whiteboard
+     */
+    load: function (clicks) {
+      this.clicks = clicks;
+      this.redraw();
     }
   };
 

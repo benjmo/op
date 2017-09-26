@@ -4,18 +4,19 @@
 
 const util = require('./util');
 const wordlist = require('./wordlist');
+const WIN_SCORE = 5;
+
 let rooms = {};
 
 /*
  * Attempt to handle lobbies/rooms
  */
 const joinRoom = function (room) {
-  this.socket.join(room.id, () => {
-    this.name = room.addUser(this.socket.id);
-    this.room = room;
-    this.socket.emit('game_details',room.getState());
-    this.socket.broadcast.to(room.id).emit('chatMessage', 'a new user has joined the room'); // broadcast to everyone in the room
-  });
+  this.socket.join(room.id);
+  this.room = room;
+  this.name = room.addUser(this.socket.id);
+  this.socket.emit('gameDetails',room.getState());
+  this.socket.broadcast.to(room.id).emit('chatMessage', 'a new user has joined the room'); // broadcast to everyone in the room
 };
 
 const leaveRoom = function () {
@@ -29,9 +30,19 @@ const leaveRoom = function () {
  * Handle user drawing
  */
 const draw = function (data) {
-  if (this.room && this.room.currentDrawer() == this.socket.id)
-    for (let room of Object.keys(this.socket.rooms))
-      this.socket.broadcast.to(room).emit('draw', data);
+  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)) {
+    this.io.to(this.room.id).emit('draw', data);
+    this.room.addClick(data);
+  }
+};
+
+/**
+ * Clear drawing
+ */
+const clearDrawing = function () {
+  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)) {
+    this.room.clearClicks();
+  }
 };
 
 /**
@@ -39,12 +50,21 @@ const draw = function (data) {
  */
 const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
-  if (util.checkGuess(room.currentWord, data)) {
-    socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
-    socket.emit('chatMessage', `You guessed ${data}`) //to self
-  } else if (util.closeGuess(room.currentWord, data)) {
-    socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
-    socket.emit('chatMessage', `Your guess ${data} is close`) //to self
+  let drawing = this.room.currentDrawer() == this.socket.id;
+  if (room.checkGuess(data,socket.id)) {
+    if (drawing) {
+      socket.emit('chatMessage',"Please don't reveal the word in chat");
+    } else {
+      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
+      socket.emit('chatMessage', `You guessed ${data}`) //to self
+    }
+  } else if (room.closeGuess(data)) {
+    if (drawing) {
+      socket.emit('chatMessage',"Please don't reveal the word in chat");
+    } else {
+      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
+      socket.emit('chatMessage', `Your guess ${data} is close`) //to self
+    }
   } else {
     io.to(room.id).emit('chatMessage', `${this.name}: ${data}`);
   }
@@ -70,30 +90,65 @@ Client.prototype = {
   chatMessage,
   draw,
   joinRoom,
-  leaveRoom
+  leaveRoom,
+  clearDrawing
 };
 
 const currentDrawer = function() {
   return this.drawer;
 };
 
+const checkGuess = function(guess,id) {
+  let result = util.checkGuess(this.currentWord,guess);
+  if (result) {
+    this.endRound(id);
+  }
+  return result;
+};
+
+const closeGuess = function(guess) {
+  return util.closeGuess(this.currentWord,guess);
+};
+
+const endRound = function(winner) {
+  if (winner) {
+    let name = this.names[winner];
+    this.score[name]++;
+    if (this.score[name] >= WIN_SCORE) {
+      this.state = GAME_OVER;
+    } else {
+      this.state = ROUND_ENDED;
+      this.nextRound();
+    }
+  } else {
+    this.state = ROUND_ENDED;
+    this.nextRound();
+  }
+};
+
 const nextRound = function() {
-  let users = this.users, io = this.io;
+  let users = this.users, io = this.io, room = this;
+  console.log(users);
+  if (users.length <= 1) {
+    this.state = WAITING;
+    this.io.to(this.id).emit('status',WAITING);
+    return;
+  }
   if (this.drawer == null)
     this.drawer = users[0];
   else
     this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
-  this.state = STARTING;
+  this.clicks = [];
   this.currentWord = wordlist.getRandomWord();
-  this.io.to(this.id).emit('nextRound');
-  setTimeout(() => {
-    this.io.to(this.id).emit('nextRound', {
-      drawer: this.drawer,
-      drawerName: this.names[this.drawer],
-      currentWord: this.currentWord,
-      score: this.score
+  io.to(this.id).emit('nextRound');
+  setTimeout(function() {
+    io.to(room.id).emit('nextRound', {
+      drawer: room.drawer,
+      drawerName: room.names[room.drawer],
+      currentWord: room.currentWord,
+      score: room.score
     });
-    this.state = IN_PROGRESS;
+    room.state = IN_PROGRESS;
   },5000);
 };
 
@@ -108,14 +163,21 @@ const nextRound = function() {
 const addUser = function(user, name = "anon"+Math.trunc(Math.random()*10000)) {
   this.users.push(user);
   this.names[user] = name;
-  this.score[user] = 0;
+  this.score[name] = 0;
+  this.io.to(this.id).emit('newUser',this.score);
+  if (this.state == NOT_STARTED || this.state == WAITING) {
+    this.nextRound();
+  }
   return name;
 };
 
 const removeUser = function(user) {
-  this.users.splice(this.users.indexOf(user),0);
+  this.users.splice(this.users.indexOf(user),1);
+  delete this.score[this.names[user]];
   delete this.names[user];
-  delete this.score[user];
+  if (user == this.drawer || this.users.length <= 1) {
+    this.endRound();
+  }
 };
 
 const getState = function () {
@@ -123,15 +185,26 @@ const getState = function () {
     drawer: this.drawer,
     state: this.state,
     names: this.names,
-    score: this.score
+    score: this.score,
+    clicks: this.clicks
   }
 };
 
+const addClick = function (data) {
+  this.clicks.push(data);
+};
+
+const clearClicks = function () {
+  this.clicks = [];
+  this.io.to(this.id).emit('clear');
+};
+
 const NOT_STARTED = 0;
-const STARTING = 1;
-const IN_PROGRESS = 2;
-const ROUND_ENDED = 3;
-const GAME_OVER = 4;
+const WAITING = 1;
+const STARTING = 2;
+const IN_PROGRESS = 3;
+const ROUND_ENDED = 4;
+const GAME_OVER = 5;
 
 function Room(io,id) {
   rooms[id] = this;
@@ -143,6 +216,7 @@ function Room(io,id) {
   this.users = [];
   this.score = {};
   this.names = {};
+  this.clicks = [];
 }
 
 Room.prototype = {
@@ -150,7 +224,12 @@ Room.prototype = {
   nextRound,
   addUser,
   removeUser,
-  getState
+  getState,
+  addClick,
+  clearClicks,
+  endRound,
+  checkGuess,
+  closeGuess
 };
 
 module.exports = function (io) {

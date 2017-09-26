@@ -31,6 +31,7 @@ io.on('connection', function (socket) {
   socket.on('draw', (data) => client.draw(data));
   socket.on('chatMessage', (data) => client.chatMessage(data));
   socket.on('skipDrawing', () => client.skipDrawing());
+  socket.on('clear', () => client.clearDrawing());
   socket.on('disconnect', () => client.leaveRoom());
 });
 
