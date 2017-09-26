@@ -4,9 +4,14 @@
  * @param {String} guess
  */
 const check_guess = function(word, guess) {
+  // not case sensitive
+  guess = guess.toLowerCase();
+  word = word.toLowerCase();
+
   // exact match
-  if (word === guess)
+  if (word === guess) {
     return true;
+  }
 
   // guess is compound word that contains the actual word, or vice versa
   // for compound words (eg. 'doorway' === 'door'), or multiple guesses at once (eg. 'cow bull' === 'cow')

@@ -8,7 +8,12 @@
   $.fn.pictMessenger = function (options) {
     let opts = $.extend({}, $.fn.pictMessenger.defaults, options);
     return this.each(() => {
-      let inputForm = $('<form>').append($('<input>')).append($('<button>').text('Send'));
+      let inputForm = $('<form>').addClass('input-group').append(
+        $('<input>').addClass('form-control')).append(
+          $('<div>').width('1%').addClass('input-group-btn').append(
+            $('<button>').attr('type','submit').addClass('btn btn-default').append(
+              $('<i>').addClass('glyphicon glyphicon-search')
+            )));
       let messageDiv = $('<ul>');
       this.append(messageDiv).append(inputForm);
       messageDiv.height($(window).height() * opts.height / 100 - inputForm.height());
