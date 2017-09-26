@@ -70,6 +70,29 @@ const chatMessage = function (data) {
 };
 
 /**
+ * Handle name setting
+ */
+const nameMessage = function () {
+  // Get username from user
+  var name = ""
+  this.socket.on('nameMessage', (username) => {
+    // Set if unique, ask again if not
+    var unique = false;
+    while (!unique) {
+      if (this.names.includes(username)) {
+        this.socket.emit('nameMessage', 'notUnique');
+      } else {
+        this.socket.emit('nameMessage', 'Unique');
+        name = username;
+        unique = true;
+      }
+    }      
+  });
+  
+  return name;
+};
+
+/**
  * Skip current users drawing turn
  */
 const skipDrawing = function () {
@@ -150,15 +173,7 @@ const nextRound = function() {
   },5000);
 };
 
-/**
- * Usernames
- */
-// const get_username = function () {
-//   let username = prompt("Please enter your name:", "anon"+Math.trunc(Math.random()*10000));
-//   return username;
-// };
-
-const addUser = function(user, name = "anon"+Math.trunc(Math.random()*10000)) {
+const addUser = function(user, name = "anon"+Math.trunc(Math.random()*10000)) { //TODO call name thing here
   this.users.push(user);
   this.names[user] = name;
   this.score[name] = 0;
