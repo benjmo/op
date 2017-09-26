@@ -107,19 +107,24 @@
           let interval;
           if (data == null) {
             let time = 5;
+            $('#pictStatus').text(`Next Round in ${time}`);
             interval = setInterval(() => {
+              time-=1;
               if (time == 0) {
                 clearInterval(interval);
                 plugin.clear();
                 return;
               }
               $('#pictStatus').text(`Next Round in ${time}`);
-              time-=1;
             },1000);
           } else {
             clearInterval(interval);
             plugin.options.drawing = data.drawer == socket.id;
-            $('#pictStatus').text(`${data.drawer_name}'s turn to draw`);
+            if (plugin.options.drawing) {
+              $('#pictStatus').html(`Your word is <strong>${data.current_word}</strong>`);
+            } else {
+              $('#pictStatus').text(`${data.drawer_name}'s turn to draw`);
+            }
           }
         });
       }

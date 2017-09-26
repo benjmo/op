@@ -2,7 +2,8 @@
  * File for functions that handle socket.io events related to the game
  */
 
-let util = require('./util');
+const util = require('./util');
+const wordlist = require('./wordlist');
 let rooms = {};
 
 /*
@@ -37,15 +38,15 @@ const draw = function (data) {
  * Handle messaging
  */
 const chat_message = function (data) {
-  let socket = this.socket, io = this.io, room = this.room.id;
-  if (util.check_guess("",data)) {
-    socket.broadcast.to(room).emit('chat_message', `Someone Guessed ${guess}`); //to everyone else
-    socket.emit('chat_message', `You Guessed ${guess}`) //to self
+  let socket = this.socket, io = this.io, room = this.room;
+  if (util.check_guess(room.current_word, data)) {
+    socket.broadcast.to(room.id).emit('chat_message', `${this.name} guessed ${data}`); //to everyone else
+    socket.emit('chat_message', `You guessed ${data}`) //to self
   } else if (data.match(/^!join /)) {
     let room = data.replace(/^!join /, "");
     join_room(io, socket, room);
   } else {
-    io.to(room).emit('chat_message', `${this.name}: ${data}`);
+    io.to(room.id).emit('chat_message', `${this.name}: ${data}`);
   }
 };
 
@@ -83,11 +84,13 @@ const next_game = function() {
   else
     this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
   this.state = STARTING;
+  this.current_word = wordlist.getRandomWord();
   this.io.to(this.id).emit('next_game');
   setTimeout(() => {
     this.io.to(this.id).emit('next_game', {
       drawer: this.drawer,
       drawer_name: this.names[this.drawer],
+      current_word: this.current_word,
       score: this.score
     });
     this.state = IN_PROGRESS;
@@ -128,6 +131,7 @@ function Room(io,id) {
   this.id = id;
   this.drawer = null;
   this.state = NOT_STARTED;
+  this.current_word = '';
   this.users = [];
   this.score = {};
   this.names = {};
