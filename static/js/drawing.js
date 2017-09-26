@@ -102,7 +102,7 @@
           }
           plugin.addClick(data.x, data.y, data.drag);
           plugin.redraw();
-        }).on('next_game', (data) => {
+        }).on('nextRound', (data) => {
           console.log(data);
           let interval;
           if (data == null) {
@@ -121,9 +121,9 @@
             clearInterval(interval);
             plugin.options.drawing = data.drawer == socket.id;
             if (plugin.options.drawing) {
-              $('#pictStatus').html(`Your word is <strong>${data.current_word}</strong>`);
+              $('#pictStatus').html(`Your word is <strong>${data.currentWord}</strong>`);
             } else {
-              $('#pictStatus').text(`${data.drawer_name}'s turn to draw`);
+              $('#pictStatus').text(`${data.drawerName}'s turn to draw`);
             }
           }
         });

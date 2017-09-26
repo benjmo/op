@@ -37,12 +37,12 @@
       inputForm.submit(() => {
         let msg = $(this).find('input');
         if (msg.val().trim() != '') {
-          opts.socket.emit('chat_message', msg.val());
+          opts.socket.emit('chatMessage', msg.val());
           msg.val('');
         }
         return false;
       });
-      opts.socket.on('chat_message', (msg) => {
+      opts.socket.on('chatMessage', (msg) => {
         messageDiv.append($('<li>').text(msg));
         scrollBottom();
       });

@@ -25,7 +25,7 @@ block content
     let whiteboard;
     $(document).ready(function () {
       let socket = io(), score, users;
-      socket.on('game_details', (data) => {
+      socket.on('gameDetails', (data) => {
         console.log(data)
         score = data.score;
         users = data.users;
@@ -45,7 +45,7 @@ block content
         }
       });
       if ("#{game}" != "")
-        socket.emit('join_room', '#{game}');
+        socket.emit('joinRoom', '#{game}');
       whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: #{drawing || false}});
       let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
       $('#clear').click(function() {
@@ -53,6 +53,6 @@ block content
         socket.emit('draw', {clear: true});
       });
       $('#skip').click(() => {
-        socket.emit('skip_drawing');
+        socket.emit('skipDrawing');
       });
     });

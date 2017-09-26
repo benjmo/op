@@ -9,19 +9,19 @@ let rooms = {};
 /*
  * Attempt to handle lobbies/rooms
  */
-const join_room = function (room) {
+const joinRoom = function (room) {
   this.socket.join(room.id, () => {
-    this.name = room.add_user(this.socket.id);
+    this.name = room.addUser(this.socket.id);
     this.room = room;
     this.socket.emit('game_details',room.getState());
-    this.socket.broadcast.to(room.id).emit('chat_message', 'a new user has joined the room'); // broadcast to everyone in the room
+    this.socket.broadcast.to(room.id).emit('chatMessage', 'a new user has joined the room'); // broadcast to everyone in the room
   });
 };
 
-const leave_room = function () {
+const leaveRoom = function () {
   if (this.room)
     this.socket.leave(this.room.id, () => {
-      this.room.remove_user(this.socket.id);
+      this.room.removeUser(this.socket.id);
     })
 };
 
@@ -29,7 +29,7 @@ const leave_room = function () {
  * Handle user drawing
  */
 const draw = function (data) {
-  if (this.room.current_drawer() == this.socket.id)
+  if (this.room && this.room.currentDrawer() == this.socket.id)
     for (let room of Object.keys(this.socket.rooms))
       this.socket.broadcast.to(room).emit('draw', data);
 };
@@ -37,25 +37,25 @@ const draw = function (data) {
 /**
  * Handle messaging
  */
-const chat_message = function (data) {
+const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
-  if (util.check_guess(room.current_word, data)) {
-    socket.broadcast.to(room.id).emit('chat_message', `${this.name} guessed ${data}`); //to everyone else
-    socket.emit('chat_message', `You guessed ${data}`) //to self
-  } else if (data.match(/^!join /)) {
-    let room = data.replace(/^!join /, "");
-    join_room(io, socket, room);
+  if (util.checkGuess(room.currentWord, data)) {
+    socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
+    socket.emit('chatMessage', `You guessed ${data}`) //to self
+  } else if (util.closeGuess(room.currentWord, data)) {
+    socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed ${data}`); //to everyone else
+    socket.emit('chatMessage', `Your guess ${data} is close`) //to self
   } else {
-    io.to(room.id).emit('chat_message', `${this.name}: ${data}`);
+    io.to(room.id).emit('chatMessage', `${this.name}: ${data}`);
   }
 };
 
 /**
  * Skip current users drawing turn
  */
-const skip_drawing = function () {
-  if (this.room.current_drawer() == this.socket.id || this.room.current_drawer() == null)
-    this.room.next_game();
+const skipDrawing = function () {
+  if (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)
+    this.room.nextRound();
 };
 
 function Client(io,socket) {
@@ -66,31 +66,31 @@ function Client(io,socket) {
 }
 
 Client.prototype = {
-  skip_drawing,
-  chat_message,
+  skipDrawing,
+  chatMessage,
   draw,
-  join_room,
-  leave_room
+  joinRoom,
+  leaveRoom
 };
 
-const current_drawer = function() {
+const currentDrawer = function() {
   return this.drawer;
 };
 
-const next_game = function() {
+const nextRound = function() {
   let users = this.users, io = this.io;
   if (this.drawer == null)
     this.drawer = users[0];
   else
     this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
   this.state = STARTING;
-  this.current_word = wordlist.getRandomWord();
-  this.io.to(this.id).emit('next_game');
+  this.currentWord = wordlist.getRandomWord();
+  this.io.to(this.id).emit('nextRound');
   setTimeout(() => {
-    this.io.to(this.id).emit('next_game', {
+    this.io.to(this.id).emit('nextRound', {
       drawer: this.drawer,
-      drawer_name: this.names[this.drawer],
-      current_word: this.current_word,
+      drawerName: this.names[this.drawer],
+      currentWord: this.currentWord,
       score: this.score
     });
     this.state = IN_PROGRESS;
@@ -100,19 +100,19 @@ const next_game = function() {
 /**
  * Usernames
  */
-const get_username = function () {
-  var username = prompt("Please enter your name:", "anon"+Math.trunc(Math.random()*10000));
-  return username;
-};
+// const get_username = function () {
+//   let username = prompt("Please enter your name:", "anon"+Math.trunc(Math.random()*10000));
+//   return username;
+// };
 
-const add_user = function(user, name = get_username() /*"anon"+Math.trunc(Math.random()*10000)*/) {
+const addUser = function(user, name = "anon"+Math.trunc(Math.random()*10000)) {
   this.users.push(user);
   this.names[user] = name;
   this.score[user] = 0;
   return name;
 };
 
-const remove_user = function(user) {
+const removeUser = function(user) {
   this.users.splice(this.users.indexOf(user),0);
   delete this.names[user];
   delete this.score[user];
@@ -139,30 +139,30 @@ function Room(io,id) {
   this.id = id;
   this.drawer = null;
   this.state = NOT_STARTED;
-  this.current_word = '';
+  this.currentWord = '';
   this.users = [];
   this.score = {};
   this.names = {};
 }
 
 Room.prototype = {
-  current_drawer,
-  next_game,
-  add_user,
-  remove_user,
+  currentDrawer,
+  nextRound,
+  addUser,
+  removeUser,
   getState
 };
 
 module.exports = function (io) {
   return {
-    create_client: function (socket) {
+    createClient: function (socket) {
       return new Client(io,socket);
     },
-    create_room: function (id) {
+    createRoom: function (id) {
       return new Room(io, id);
     },
-    get_room: function (id) {
-      return rooms.hasOwnProperty(id) ? rooms[id] : this.create_room(id);
+    getRoom: function (id) {
+      return rooms.hasOwnProperty(id) ? rooms[id] : this.createRoom(id);
     }
   };
 };

@@ -3,7 +3,7 @@
  * @param {String} word
  * @param {String} guess
  */
-const check_guess = function(word, guess) {
+const checkGuess = function(word, guess) {
   // not case sensitive
   guess = guess.toLowerCase();
   word = word.toLowerCase();
@@ -26,7 +26,9 @@ const check_guess = function(word, guess) {
       return true;
   }
   */
+};
 
+const closeGuess = function(word, guess) {
   // minor typo, up to one extra character and up to one missing character
   let i1 = 0, i2 = 0;
   let diff = 0;
@@ -35,14 +37,14 @@ const check_guess = function(word, guess) {
     if (word[i1] === guess[i2]) {
       i1++;
       i2++;
-    } else { 
+    } else {
       // check for extra letter in word
       if (i1 < word.length - 1 && word[i1+1] === guess[i2]) {
         i1++;
-      // check for extra letter in guess
+        // check for extra letter in guess
       } else if (i2 < guess.length - 1 && word[i1] === guess[i2+1]) {
         i2++;
-      // multiple wrong letters, just skip over them
+        // multiple wrong letters, just skip over them
       } else {
         i1++;
         i2++;
@@ -59,5 +61,6 @@ const check_guess = function(word, guess) {
 };
 
 module.exports = {
-  check_guess
+  checkGuess,
+  closeGuess
 };
