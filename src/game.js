@@ -14,9 +14,6 @@ let rooms = {};
 const joinRoom = function (room) {
   this.socket.join(room.id);
   this.room = room;
-  this.name = room.addUser(this.socket.id);
-  this.socket.emit('gameDetails',room.getState());
-  this.socket.broadcast.to(room.id).emit('chatMessage', 'a new user has joined the room'); // broadcast to everyone in the room
 };
 
 const leaveRoom = function () {
@@ -72,24 +69,17 @@ const chatMessage = function (data) {
 /**
  * Handle name setting
  */
-const nameMessage = function () {
-  // Get username from user
-  var name = ""
-  this.socket.on('nameMessage', (username) => {
-    // Set if unique, ask again if not
-    var unique = false;
-    while (!unique) {
-      if (this.names.includes(username)) {
-        this.socket.emit('nameMessage', 'notUnique');
-      } else {
-        this.socket.emit('nameMessage', 'Unique');
-        name = username;
-        unique = true;
-      }
-    }      
-  });
-  
-  return name;
+const nameMessage = function (name) {
+  // Set if unique, ask again if not
+  let room = this.room;
+  let unique = !room.hasName(name);
+  if (unique) {
+    this.name = name;
+    room.addUser(this.socket.id,this.name)
+    this.socket.emit('gameDetails',room.getState());
+    this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`); // broadcast to everyone in the room
+  }
+  this.socket.emit('nameMessage',unique);
 };
 
 /**
@@ -113,7 +103,8 @@ Client.prototype = {
   draw,
   joinRoom,
   leaveRoom,
-  clearDrawing
+  clearDrawing,
+  nameMessage
 };
 
 const currentDrawer = function() {
@@ -173,11 +164,11 @@ const nextRound = function() {
   },5000);
 };
 
-const addUser = function(user, name = "anon"+Math.trunc(Math.random()*10000)) { //TODO call name thing here
+const addUser = function(user, name) {
   this.users.push(user);
   this.names[user] = name;
   this.score[name] = 0;
-  this.io.to(this.id).emit('newUser',this.score);
+  this.io.to(this.id).emit('updateScore',this.score);
   if (this.state == NOT_STARTED || this.state == WAITING) {
     this.nextRound();
   }
@@ -212,6 +203,13 @@ const clearClicks = function () {
   this.io.to(this.id).emit('clear');
 };
 
+const hasName = function (name) {
+  for (id in this.names)
+    if (this.names.hasOwnProperty(id) && this.names[id] == name)
+      return true;
+  return false;
+};
+
 const NOT_STARTED = 0;
 const WAITING = 1;
 const STARTING = 2;
@@ -241,7 +239,8 @@ Room.prototype = {
   addClick,
   clearClicks,
   endRound,
-  checkGuess
+  checkGuess,
+  hasName
 };
 
 module.exports = function (io) {

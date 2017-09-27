@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel='stylesheet' href='stylesheets/messenger.css'>
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
+    <script src='/socket.io/socket.io.js'></script>
+    <script src="js/drawing.js"></script>
+    <script src="js/messenger.js"></script>
+    <script src="js/name.js"></script>
+    <title>Online Pictionary</title>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="messenger"></div>
+            </div>
+            <div class="col-sm-6">
+                <h1>Online Pictionary</h1>
+                <p id="pictStatus"></p>
+                <canvas id="myDrawing" height="500" width="500" style="border: 1px solid #000000;width:100%;height:auto">
+                    <p>Your browser doesn't support canvas</p>
+                </canvas>
+                <button class="btn btn-default" id="clear">Clear</button>
+                <button class="btn btn-default" id="skip">Skip</button>
+            </div>
+            <div class="col-sm-3">
+                <table class="table" id="pictScore">
+                    <thead><tr>
+                        <th>Name</th>
+                        <th>Score</th>
+                    </tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+<script>
+  const NOT_STARTED = 0;
+  const WAITING = 1;
+  const STARTING = 2;
+  const IN_PROGRESS = 3;
+  const ROUND_ENDED = 4;
+  const GAME_OVER = 5;
+  let whiteboard;
+
+  const updateScore = (score) => {
+    let scoreboard = $('#pictScore tbody').empty();
+    for (key in score) {
+      if (score.hasOwnProperty(key))
+        scoreboard.append($('<tr>').append($('<td>').text(key)).append($('<td>').text(score[key])));
+    }
+  };
+
+  $(document).ready(function () {
+    let socket = io(), users;
+    let params = (new URL(document.location)).searchParams;
+    let game = params.get("game");
+    if (game)
+      socket.emit('joinRoom', game);
+    get_username(socket);
+    whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
+    let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
+    socket.on('gameDetails', (data) => {
+      console.log(data)
+      updateScore(data.score);
+      users = data.users;
+      switch (data.status) {
+        case STARTING:
+          $('#pictStatus').text(`New Game starting soon`);
+          break;
+        case WAITING:
+          $('#pictStatus').text(`Waiting for more players`);
+          break;
+        case IN_PROGRESS:
+          $('#pictStatus').text(`Round in progress`);
+          break;
+        case ROUND_ENDED:
+          $('#pictStatus').text(`New Round starting soon`);
+          break;
+        case GAME_OVER:
+          $('#pictStatus').text(`Game Over: New Game starting soon`);
+          break;
+      }
+      whiteboard.load(data.clicks);
+    }).on('updateScore', (score) => {
+      console.log(score);
+      updateScore(score);
+    }).on('nextRound', (data) => {
+      if (data)
+        updateScore(data.score);
+    }).on('status', (status) => {
+      switch (status) {
+        case STARTING:
+          $('#pictStatus').text(`New Game starting soon`);
+          break;
+        case WAITING:
+          $('#pictStatus').text(`Waiting for more players`);
+          break;
+        case IN_PROGRESS:
+          $('#pictStatus').text(`Round in progress`);
+          break;
+        case ROUND_ENDED:
+          $('#pictStatus').text(`New Round starting soon`);
+          break;
+        case GAME_OVER:
+          $('#pictStatus').text(`Game Over: New Game starting soon`);
+          break;
+      }
+    });
+    $('#clear').click(function() {
+      socket.emit('clear');
+    });
+    $('#skip').click(() => {
+      socket.emit('skipDrawing');
+    });
+  });
+</script>
+</body>
+</html>
