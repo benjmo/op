@@ -152,20 +152,15 @@ const checkGuess = function(guess,id) {
  * @param winner The winner of the round, or null if no one won
  */
 const endRound = function(winner) {
+  this.state = ROUND_ENDED;
   if (winner) {
-    let name = this.names[winner];
-    this.score[name]++;
+    this.addScore(winner, 1);
+    this.addScore(this.drawer, 1);
     this.io.to(this.id).emit('updateScore',this.score);
-    if (this.score[name] >= WIN_SCORE) {
-      this.state = GAME_OVER;
-    } else {
-      this.state = ROUND_ENDED;
-      this.nextRound();
-    }
-  } else {
-    this.state = ROUND_ENDED;
-    this.nextRound();
   }
+  // move to round if game isn't over
+  if (this.state === ROUND_ENDED)
+    this.nextRound();
 };
 
 /**
@@ -196,6 +191,19 @@ const nextRound = function() {
     room.state = IN_PROGRESS;
   },5000);
 };
+
+/**
+ * Gives points to a user
+ * @param user - user's ID
+ * @param score - score to add
+ */
+const addScore = function(user, score) {
+  const name = this.names[user];
+  this.score[name] += score;
+  if (this.score[name] >= WIN_SCORE) {
+    this.state = GAME_OVER;
+  }
+}
 
 /**
  * Add a new user's information to the game
@@ -308,6 +316,7 @@ Room.prototype = {
   addUser,
   removeUser,
   getState,
+  addScore,
   addClick,
   clearClicks,
   endRound,
