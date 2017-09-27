@@ -8,14 +8,18 @@ const WIN_SCORE = 5;
 
 let rooms = {};
 
-/*
- * Attempt to handle lobbies/rooms
+/**
+ * Subscribe the client's socket to the given room's channel
+ * @param room Room object
  */
 const joinRoom = function (room) {
   this.socket.join(room.id);
   this.room = room;
 };
 
+/**
+ * Leave the channel the client is currently in
+ */
 const leaveRoom = function () {
   if (this.room)
     this.socket.leave(this.room.id, () => {
@@ -24,7 +28,9 @@ const leaveRoom = function () {
 };
 
 /**
- * Handle user drawing
+ * Draw the given mouse action on the whiteboard
+ * Only allows the current drawer to draw, unless noone has been assigned yet
+ * @param data Mouse action including x, y, action type
  */
 const draw = function (data) {
   if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)) {
@@ -34,7 +40,8 @@ const draw = function (data) {
 };
 
 /**
- * Clear drawing
+ * Clear the drawing
+ * Only allows the current drawer to clear, unless noone has been assigned yet
  */
 const clearDrawing = function () {
   if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)) {
@@ -43,21 +50,23 @@ const clearDrawing = function () {
 };
 
 /**
- * Handle messaging
+ * Send a chat message to all clients
+ * Also checks if the chat message has guessed the current word
+ * @param data Chat Message
  */
 const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
   let drawing = this.room.currentDrawer() == this.socket.id;
   if (room.checkGuess(data, socket.id) == util.CORRECT_GUESS) {
     if (drawing) {
-      socket.emit('chatMessage',"Please don't reveal the word in chat");
+      socket.emit('chatMessage','Please don\'t reveal the word in chat');
     } else {
       socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed the word: ${data}.`); //to everyone else
       socket.emit('chatMessage', `You guessed the word: ${data}!`) //to self
     }
   } else if (room.checkGuess(data, socket.id) == util.CLOSE_GUESS) {
     if (drawing) {
-      socket.emit('chatMessage',"Please don't reveal the word in chat");
+      socket.emit('chatMessage','Please don\'t reveal the word in chat');
     } else {
       socket.emit('chatMessage', `${data} is close!`) //to self
     }
@@ -67,7 +76,9 @@ const chatMessage = function (data) {
 };
 
 /**
- * Handle name setting
+ * Handles setting the name of the client. Name must be unique.
+ * @param name Chosen Name
+ * @returns {boolean} Whether the name has been taken
  */
 const nameMessage = function (name) {
   // Set if unique, ask again if not
@@ -79,17 +90,23 @@ const nameMessage = function (name) {
     this.socket.emit('gameDetails',room.getState());
     this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`); // broadcast to everyone in the room
   }
-  this.socket.emit('nameMessage',unique);
+  return unique;
 };
 
 /**
  * Skip current users drawing turn
  */
 const skipDrawing = function () {
-  if (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)
+  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null))
     this.room.nextRound();
 };
 
+/**
+ * Client Object
+ * @param io socket.io instance
+ * @param socket socket.io socket of client
+ * @constructor
+ */
 function Client(io,socket) {
   this.io = io;
   this.socket = socket;
@@ -107,13 +124,22 @@ Client.prototype = {
   nameMessage
 };
 
+/**
+ * Returns the current drawers ID
+ * @returns {*|null} Drawer ID or null if not set
+ */
 const currentDrawer = function() {
   return this.drawer;
 };
 
+/**
+ * Check whether the guess matches the current word
+ * @param guess The word guessed
+ * @param id The client's ID
+ * @returns {*} How close the guess is
+ */
 const checkGuess = function(guess,id) {
-  drawing = (this.drawer == id);
-
+  let drawing = (this.drawer == id);
   let result = util.checkGuess(this.currentWord,guess);
   if (result == util.CORRECT_GUESS && !drawing) {
     this.endRound(id);
@@ -121,6 +147,10 @@ const checkGuess = function(guess,id) {
   return result;
 };
 
+/**
+ * Ends the current round and updates the score
+ * @param winner The winner of the round, or null if no one won
+ */
 const endRound = function(winner) {
   if (winner) {
     let name = this.names[winner];
@@ -138,6 +168,9 @@ const endRound = function(winner) {
   }
 };
 
+/**
+ * Starts the next round if there are enough players and updates the game state
+ */
 const nextRound = function() {
   let users = this.users, io = this.io, room = this;
   console.log(users);
@@ -164,6 +197,12 @@ const nextRound = function() {
   },5000);
 };
 
+/**
+ * Add a new user's information to the game
+ * Starts the game if it is waiting for players, or not started yet
+ * @param user User's ID
+ * @param name User's chosen name
+ */
 const addUser = function(user, name) {
   this.users.push(user);
   this.names[user] = name;
@@ -172,18 +211,28 @@ const addUser = function(user, name) {
   if (this.state == NOT_STARTED || this.state == WAITING) {
     this.nextRound();
   }
-  return name;
 };
 
+/**
+ * Remove a user's information from the game
+ * Also ends the current round with no winner if they were they drawer,
+ * or there are not enough players remaining
+ * @param user User's ID
+ */
 const removeUser = function(user) {
   this.users.splice(this.users.indexOf(user),1);
   delete this.score[this.names[user]];
   delete this.names[user];
   if (user == this.drawer || this.users.length <= 1) {
     this.endRound();
+    this.clearClicks();
   }
 };
 
+/**
+ * Gets the current game state
+ * @returns {{drawer: *, state: *, names: *, score: *, clicks: *}}
+ */
 const getState = function () {
   return {
     drawer: this.drawer,
@@ -194,15 +243,27 @@ const getState = function () {
   }
 };
 
+/**
+ * Add a mouse action to the game state
+ * @param data Mouse action including x, y, action type
+ */
 const addClick = function (data) {
   this.clicks.push(data);
 };
 
+/**
+ * Clears all stored mouse actions and tells all clients to clear
+ */
 const clearClicks = function () {
   this.clicks = [];
   this.io.to(this.id).emit('clear');
 };
 
+/**
+ * Checks if the given name is taken
+ * @param name Name to be checked
+ * @returns {boolean} Whether the name is taken
+ */
 const hasName = function (name) {
   for (id in this.names)
     if (this.names.hasOwnProperty(id) && this.names[id] == name)
@@ -210,6 +271,11 @@ const hasName = function (name) {
   return false;
 };
 
+/**
+ * Game Status's
+ * @constant
+ * @type {number}
+ */
 const NOT_STARTED = 0;
 const WAITING = 1;
 const STARTING = 2;
@@ -217,6 +283,12 @@ const IN_PROGRESS = 3;
 const ROUND_ENDED = 4;
 const GAME_OVER = 5;
 
+/**
+ * Game State Object
+ * @param io socket.io Instance
+ * @param id socket.io Channel Name
+ * @constructor
+ */
 function Room(io,id) {
   rooms[id] = this;
   this.io = io;

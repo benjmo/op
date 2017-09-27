@@ -27,7 +27,7 @@ app.get('/message/', function (req, res) {
 io.on('connection', function (socket) {
   console.log('a user connected');
   let client = game.createClient(socket);
-  socket.on('nameMessage',(data) => client.nameMessage(data));
+  socket.on('nameMessage',(data) => socket.emit('nameMessage',client.nameMessage(data)));
   socket.on('joinRoom', (data) => client.joinRoom(game.getRoom(data)));
   socket.on('draw', (data) => client.draw(data));
   socket.on('chatMessage', (data) => client.chatMessage(data));

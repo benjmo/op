@@ -83,7 +83,6 @@ const closeGuess = function(word, guess) {
 
 module.exports = {
   checkGuess,
-  closeGuess,
   CORRECT_GUESS,
   INCORRECT_GUESS,
   CLOSE_GUESS
