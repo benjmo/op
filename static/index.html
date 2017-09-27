@@ -57,12 +57,16 @@
   $(document).ready(function () {
     let socket = io(), users;
     let params = (new URL(document.location)).searchParams;
+    whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
+    let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
     let game = params.get("game");
     if (game)
       socket.emit('joinRoom', game);
+    else {
+      alert('No Game ID entered');
+      return;
+    }
     get_username(socket);
-    whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
-    let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
     socket.on('gameDetails', (data) => {
       console.log(data)
       updateScore(data.score);
