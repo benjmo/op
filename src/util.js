@@ -81,8 +81,68 @@ const closeGuess = function(word, guess) {
   //@todo plurals y -> ies (eg. 'bunny' === 'bunnies')
 };
 
+
+/**
+ * Provides a reduced version of the word, depending on hintsGiven so far
+ * @param word {String}
+ * @param hintsGiven {Int}
+ */
+const giveHint = function (word, hintsGiven) {
+  let hint = word;  
+
+  // Give length of word, denoted by underscores
+  // E.g. "foo bar" -> "_ _ _  _ _ _"
+  if (hintsGiven >= 0) {
+    hint = hint.replace(/[^ -]/ig, '_');
+  } 
+
+  // Give first letter of each word
+  // E.g. "foo bar" -> "f _ _  b _ _"
+  if (hintsGiven >= 1 && word.length > 1) {
+    let firstChar = true;
+    for (let i = 0; i < word.length; ++i) {
+      if (firstChar) {
+        hint = hint.replaceAt(i, word[i]);
+        firstChar = false;
+      }
+
+      if (word[i] == ' ') {
+        firstChar = true;
+      }
+    }
+  }
+
+  // Give additional letters randomly
+  // E.g. "foo bar" -> "f _ _ b _ r"
+  if (hintsGiven >= 2 && word.length > 3) {
+    let numChars = Math.ceil(word.length / 6);
+    while (numChars > 0) {
+      let i = Math.floor(Math.random() * word.length);
+      while (hint[i] != '_') {
+        i = Math.floor(Math.random() * word.length);
+      }
+      hint = hint.replaceAt(i, word[i]);;
+      numChars--;
+    }
+  }
+
+  // space separation may not be necessary if using special typefaces
+  return hint.split('').join(' ');
+}
+
+
+/**
+ * Replaces character at index with replacement
+ * @param {Int} index
+ * @param {String} replacement
+ */
+String.prototype.replaceAt=function(index, replacement) {
+    return this.substr(0, index) + replacement+ this.substr(index + replacement.length);
+}
+
 module.exports = {
   checkGuess,
+  giveHint,
   CORRECT_GUESS,
   INCORRECT_GUESS,
   CLOSE_GUESS

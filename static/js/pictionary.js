@@ -63,11 +63,16 @@ $(document).ready(function () {
       updateScore(data.score);
   }).on('status', (status) => {
     updateStatus(status);
+  }).on('hint', (hint) => {
+    $("#hintText").text("Hint: " +  hint);
   });
   $('#clear').click(() => {
     socket.emit('clear');
   });
   $('#skip').click(() => {
     socket.emit('skipDrawing');
+  });
+  $('#hint').click(() => {
+    socket.emit('hint');
   });
 });

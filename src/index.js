@@ -34,6 +34,7 @@ io.on('connection', function (socket) {
   socket.on('skipDrawing', () => client.skipDrawing());
   socket.on('clear', () => client.clearDrawing());
   socket.on('disconnect', () => client.leaveRoom());
+  socket.on('hint', () => client.giveHint());
 });
 
 const port = process.env.PORT || 3000;

@@ -49,6 +49,15 @@ const clearDrawing = function () {
   }
 };
 
+const giveHint = function() {
+  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null) &&
+      this.room.hintsGiven < 3) {
+    let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
+    this.socket.emit('hint', hint);
+    this.room.hintsGiven++;
+  }
+}
+
 /**
  * Send a chat message to all clients
  * Also checks if the chat message has guessed the current word
@@ -121,7 +130,8 @@ Client.prototype = {
   joinRoom,
   leaveRoom,
   clearDrawing,
-  nameMessage
+  nameMessage,
+  giveHint
 };
 
 /**
@@ -180,6 +190,7 @@ const nextRound = function() {
     this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
   this.clicks = [];
   this.currentWord = wordlist.getRandomWord();
+  this.hintsGiven = 0;
   io.to(this.id).emit('nextRound');
   setTimeout(function() {
     io.to(room.id).emit('nextRound', {
@@ -308,6 +319,7 @@ function Room(io,id) {
   this.score = {};
   this.names = {};
   this.clicks = [];
+  this.hintsGiven = 0;
 }
 
 Room.prototype = {
