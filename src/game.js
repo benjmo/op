@@ -57,6 +57,7 @@ const giveHint = function() {
       this.room.hintsGiven < 3) {
     let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
     this.io.to(this.room.id).emit('hint', hint);
+    this.io.to(this.room.id).emit('chatMessage', "Hint: " + hint);
     this.room.hintsGiven++;
   }
 }
@@ -194,6 +195,7 @@ const nextRound = function() {
   this.clicks = [];
   this.currentWord = wordlist.getRandomWord();
   this.hintsGiven = 0;
+  io.to(this.id).emit('hint', "");
   io.to(this.id).emit('nextRound');
   setTimeout(function() {
     io.to(room.id).emit('nextRound', {

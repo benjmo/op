@@ -38,6 +38,14 @@ const updateStatus = (status) => {
   }
 };
 
+const updateHint = (hint) => {
+  if (hint == '') {
+    $("#hintText").text('');
+  } else {
+    $("#hintText").text('Hint: ' +  hint);
+  }
+}
+
 $(document).ready(function () {
   let socket = io();
   let params = (new URL(document.location)).searchParams;
@@ -64,7 +72,7 @@ $(document).ready(function () {
   }).on('status', (status) => {
     updateStatus(status);
   }).on('hint', (hint) => {
-    $("#hintText").text("Hint: " +  hint);
+    updateHint(hint);
   });
   $('#clear').click(() => {
     socket.emit('clear');
