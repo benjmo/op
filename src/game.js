@@ -49,11 +49,14 @@ const clearDrawing = function () {
   }
 };
 
+/**
+ * Gives a hint to everyone
+ */
 const giveHint = function() {
   if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null) &&
       this.room.hintsGiven < 3) {
     let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
-    this.socket.emit('hint', hint);
+    this.io.to(this.room.id).emit('hint', hint);
     this.room.hintsGiven++;
   }
 }
