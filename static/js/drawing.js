@@ -4,6 +4,8 @@
    */
   var pluginName = "pictWhiteboard",
     defaults = {
+      colors:['black','gray','red','purple','green','yellow','blue','orange','fuchsia','lime','teal','aqua'],
+      tools:['pencil','eraser'],
     };
 
   /*
@@ -16,6 +18,10 @@
     this.options = $.extend({}, defaults, options);
     this._defaults = defaults;
     this._name = pluginName;
+
+    this.drawingTool = 'pencil';
+    this.color = '#000000';
+    this.width = 10;
     this.clicks = [];
     this._init();
   }
@@ -32,8 +38,13 @@
       $(this.element).attr("width", $(this.element).outerWidth()).attr("height", this.element.width);
       if (context) {
         let paint;
-
+        let a = this;
         let offsetLeft = 0, offsetTop = 0; // relative to whole page
+        while (a) {
+          offsetLeft += a.offsetLeft;
+          offsetTop += a.offsetTop;
+          a = a.offsetParent;
+        }
         let height = 0, width = 0;
         /*
          * Listeners for mouse events
@@ -61,9 +72,8 @@
           // console.log("MD X:" + mouseX + " Y:" + mouseY)
           paint = true;
           socket.emit('draw', {
-            x: mouseX,
-            y: mouseY,
-            drag: false
+            x: mouseX, y: mouseY, drag: false,
+            tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
           });
         }).mousemove(function (e) {
           if (!plugin.options.drawing)
@@ -74,13 +84,13 @@
             const mouseY = (e.pageY - offsetTop) / width;
             // console.log("MM X:" + mouseX + " Y:" + mouseY)
             socket.emit('draw', {
-              x: mouseX,
-              y: mouseY,
-              drag: true
+              x: mouseX, y: mouseY, drag: true,
+              tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
             });
           }
         }).mouseleave(function (e) {
           // console.log("ML")
+          plugin.cursor.hide();
           paint = false;
         }).mouseup(function (e) {
           // console.log("MU")
@@ -91,7 +101,7 @@
          * Listener for drawing-related actions from other users
          */
         socket.on('draw', (data) => {
-          plugin.addClick(data.x, data.y, data.drag);
+          plugin.addClick(data);
           plugin.redraw();
         }).on('clear', (data) => {
           // Drawing cleared by drawer, so we have to clear our board locally
@@ -122,15 +132,27 @@
           }
         });
       }
+      let colorPicker = $();
+      for (let color of this.options.colors) {
+        colorPicker = colorPicker.add($('<button>').addClass('btn colorPicker').css('background-color',color));
+      }
+      let toolPicker = $();
+      for (let tool of this.options.tools) {
+        toolPicker = toolPicker.add($('<button>').addClass('btn toolPicker').text(tool));
+      }
+      $(document).on('click','.colorPicker', function() {
+        plugin.setColor($(this).css('background-color'));
+      }).on('click','.toolPicker', function() {
+        plugin.setTool($(this).text());
+      });
+      $('#drawingTools').append(colorPicker).append(toolPicker);
     },
 
     /*
      * Adds a mouse movement to the clicks array
      */
-    addClick: function (x, y, drag) {
-      this.clicks.push({
-        x, y, drag
-      })
+    addClick: function (data) {
+      this.clicks.push(data)
     },
 
     /*
@@ -139,19 +161,25 @@
     redraw: function () {
       let context = this.element.getContext('2d');
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
-      context.lineJoin = "round";
-      context.lineWidth = 5;
-      context.strokeStyle = "#000000";
       let height = this.element.height, width = this.element.width;
       for (let i = 0; i < this.clicks.length; i++) {
-        context.beginPath();
-        if (this.clicks[i].drag && i) {
-          context.moveTo(this.clicks[i - 1].x * width, this.clicks[i - 1].y * height);
-        } else {
-          context.moveTo(this.clicks[i].x * width - 1, this.clicks[i].y * height);
+        context.lineWidth = this.clicks[i].width;
+        context.strokeStyle = this.clicks[i].color;
+        switch (this.clicks[i].tool) {
+          case 'eraser':
+            context.strokeStyle = 'white';
+          case 'pencil':
+            context.lineJoin = "round";
+            context.beginPath();
+            if (this.clicks[i].drag && i) {
+              context.moveTo(this.clicks[i - 1].x * width, this.clicks[i - 1].y * height);
+            } else {
+              context.moveTo(this.clicks[i].x * width - 1, this.clicks[i].y * height);
+            }
+            context.lineTo(this.clicks[i].x * width, this.clicks[i].y * height);
+            context.closePath();
+            break;
         }
-        context.lineTo(this.clicks[i].x * width, this.clicks[i].y * height);
-        context.closePath();
         context.stroke();
       }
     },
@@ -171,6 +199,22 @@
     load: function (clicks) {
       this.clicks = clicks;
       this.redraw();
+    },
+
+    /**
+     * Set color of tool
+     * @param color Color chosen
+     */
+    setColor: function (color) {
+      this.color = color;
+    },
+
+    /**
+     * Set the drawing tool to use
+     * @param tool Tool chosen
+     */
+    setTool: function (tool) {
+      this.drawingTool = tool;
     }
   };
 
