@@ -214,7 +214,7 @@ const addScore = function(user, score) {
   if (this.score[name] >= WIN_SCORE) {
     this.state = GAME_OVER;
   }
-}
+};
 
 /**
  * Add a new user's information to the game
