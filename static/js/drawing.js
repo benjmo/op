@@ -5,9 +5,10 @@
   var pluginName = "pictWhiteboard",
     defaults = {
       colors:['black','gray','red','purple','green','yellow','blue','orange','fuchsia','lime','teal','aqua'],
-      tools:['pencil','eraser','fill'],
-      sizes:[{name:'small',size:'1'},{name:'normal',size:'10'},{name:'large',size:'20'}],
-    };
+      tools:['pencil','eraser','fill','line','rectangle','circle'],
+      sizes:[{name:'small',size:'5'},{name:'normal',size:'10'},{name:'large',size:'20'}],
+    },
+    shapes = ['rectangle','circle','line'];
 
   /*
    * Plugin object containing details of the Whiteboad
@@ -21,6 +22,7 @@
     this._name = pluginName;
 
     this.drawingTool = 'pencil';
+    this.isFilled = false;
     this.color = '#000000';
     this.width = 10;
     this.clicks = [];
@@ -134,10 +136,20 @@
           const mouseY = (e.pageY - offsetTop) / (realW);
           // console.log("MD X:" + mouseX + " Y:" + mouseY)
           paint = true;
-          socket.emit('draw', {
-            x: mouseX, y: mouseY, drag: false,
-            tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
-          });
+          if (shapes.includes(plugin.drawingTool)) {
+            plugin.startX = mouseX;
+            plugin.startY = mouseY;
+            socket.emit('draw', {
+              status: 'start', x: mouseX, y: mouseY,
+              tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
+              fill: plugin.isFilled,
+            })
+          } else {
+            socket.emit('draw', {
+              x: mouseX, y: mouseY, drag: false,
+              tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
+            });
+          }
         }).mousemove(function (e) {
           if (!plugin.options.drawing)
             return;
@@ -146,16 +158,45 @@
             const mouseX = (e.pageX - offsetLeft) / height;
             const mouseY = (e.pageY - offsetTop) / width;
             // console.log("MM X:" + mouseX + " Y:" + mouseY)
-            socket.emit('draw', {
-              x: mouseX, y: mouseY, drag: true,
-              tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
-            });
+            if (shapes.includes(plugin.drawingTool)) {
+              socket.emit('draw', {
+                status: 'draw', startX: plugin.startX, startY: plugin.startY, x: mouseX, y: mouseY,
+                tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
+                fill: plugin.isFilled,
+              })
+            } else {
+              socket.emit('draw', {
+                x: mouseX, y: mouseY, drag: true,
+                tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
+              });
+            }
           }
         }).mouseleave(function (e) {
           // console.log("ML")
+          if (paint && shapes.includes(plugin.drawingTool)) {
+            let height = this.height, width = this.width;
+            const mouseX = (e.pageX - offsetLeft) / height;
+            const mouseY = (e.pageY - offsetTop) / width;
+            socket.emit('draw', {
+              status: 'cancel',
+              tool: plugin.drawingTool,
+            });
+          }
           paint = false;
         }).mouseup(function (e) {
           // console.log("MU")
+          if (paint && shapes.includes(plugin.drawingTool)) {
+            let height = this.height, width = this.width;
+            const mouseX = (e.pageX - offsetLeft) / height;
+            const mouseY = (e.pageY - offsetTop) / width;
+            socket.emit('draw', {
+              status: 'end',
+              tool: plugin.drawingTool,
+              startX: plugin.startX, startY: plugin.startY,
+              x: mouseX, y: mouseY, color: plugin.color, width: plugin.width,
+              fill: plugin.isFilled,
+            });
+          }
           paint = false;
         });
 
@@ -215,6 +256,9 @@
           $(this).addClass('active');
         }))
       }
+      toolPicker.append($('<label>').append($('<input type="checkbox">').click(function() {
+        plugin.isFilled = this.checked;
+      })).append(" Fill Shape"));
       $(document).on('click','.colorPicker', function() {
         plugin.setColor($(this).css('background-color'));
         $(this).parent().find('.active').removeClass('active');
@@ -242,28 +286,73 @@
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
       context.fillStyle = 'white';
       context.fillRect(0,0,context.canvas.width,context.canvas.height);
+      context.lineJoin = "round";
       let height = this.element.height, width = this.element.width;
       for (let i = 0; i < this.clicks.length; i++) {
-        context.lineWidth = this.clicks[i].width;
-        context.strokeStyle = this.clicks[i].color;
-        switch (this.clicks[i].tool) {
+        let click = this.clicks[i], x = click.x * width, y = click.y * height;
+        let startX = click.startX * width, startY = click.startY * height;
+        context.lineWidth = click.width;
+        context.strokeStyle = click.color;
+        context.fillStyle = click.color;
+        switch (click.tool) {
           case 'eraser':
             context.strokeStyle = 'white';
           case 'pencil':
-            context.lineJoin = "round";
             context.beginPath();
-            if (this.clicks[i].drag && i) {
+            if (click.drag && i) {
               context.moveTo(this.clicks[i - 1].x * width, this.clicks[i - 1].y * height);
             } else {
-              context.moveTo(this.clicks[i].x * width - 1, this.clicks[i].y * height);
+              context.moveTo(x - 1, y);
             }
-            context.lineTo(this.clicks[i].x * width, this.clicks[i].y * height);
+            context.lineTo(x,y);
             context.closePath();
             context.stroke();
             break;
           case 'fill':
             context.putImageData(this.imageData,0,0);
             break;
+          case 'line':
+            context.beginPath();
+            if (click.status == "start") {
+              context.moveTo(x - 1, y);
+            } else {
+              context.moveTo(startX, startY);
+            }
+            context.lineTo(x, y);
+            context.closePath();
+            context.stroke();
+            break;
+          case 'rectangle':
+            if (click.status == "cancel")
+              break;
+            if (click.status == "start") {
+              context.fillRect(startX, startY,1,1);
+            } else {
+              if (click.fill)
+                context.fillRect(Math.min(startX,x),Math.min(startY,y),
+                  Math.abs(startX - x),Math.abs(startY - y));
+              else
+                context.strokeRect(Math.min(startX,x),Math.min(startY,y),
+                  Math.abs(startX - x),Math.abs(startY - y));
+            }
+            break;
+          case 'circle':
+            console.log(click)
+            let radiusX = Math.abs(startX - x)/2, radiusY = Math.abs(startY - y)/2;
+            let centerX = (startX + x)/2, centerY = (startY + y)/2;
+            let steps = 100;
+            context.beginPath();
+            context.moveTo(radiusX * Math.cos(0) + centerX, radiusY * Math.sin(0) + centerY);
+            for (let i = 0; i < steps; i++) {
+              context.lineTo(radiusX * Math.cos(2*Math.PI*i/steps) + centerX, radiusY * Math.sin(2*Math.PI*i/steps) + centerY);
+            }
+            context.closePath();
+            context.stroke();
+            if (click.fill)
+              context.fill();
+        }
+        if (shapes.includes(click.tool) && click.status != "end") {
+          this.clicks.splice(i);
         }
       }
     },
@@ -307,7 +396,8 @@
 
     fillCanvas: function (click) {
       const PIXEL_SIZE = 4;
-      const fillColor = getRgbArray(click.color,true);
+      let fillColor = getRgbArray(click.color,true);
+      fillColor[3] *= 255;
       const canvas = this.element;
       let stack = [{x:Math.trunc(click.x*canvas.width),y:Math.trunc(click.y*canvas.height)}];
       let ctx = canvas.getContext("2d");
@@ -333,9 +423,6 @@
 
       const fillPix = (color, pixIdx) => {
         for (let i of [...Array(PIXEL_SIZE).keys()]) {
-          if (i == PIXEL_SIZE-1)
-            this.imageData.data[pixIdx+i] = 255*color[i];
-          else
             this.imageData.data[pixIdx+i] = color[i];
         }
       };
