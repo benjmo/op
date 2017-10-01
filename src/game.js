@@ -8,6 +8,7 @@ const WIN_SCORE = 5;
 const BASE_GUESS_POINTS = 10;
 
 let rooms = {};
+let shapes = ['rectangle','circle','line'];
 
 /**
  * Subscribe the client's socket to the given room's channel
@@ -36,7 +37,12 @@ const leaveRoom = function () {
 const draw = function (data) {
   if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)) {
     this.io.to(this.room.id).emit('draw', data);
-    this.room.addClick(data);
+    if (shapes.includes(data.tool)) {
+      if (data.status == "end")
+        this.room.addClick(data);
+    } else {
+      this.room.addClick(data);
+    }
   }
 };
 
@@ -61,7 +67,7 @@ const giveHint = function() {
     this.io.to(this.room.id).emit('chatMessage', "Hint: " + hint);
     this.room.hintsGiven++;
   }
-}
+};
 
 /**
  * Send a chat message to all clients
@@ -142,7 +148,7 @@ Client.prototype = {
   leaveRoom,
   clearDrawing,
   nameMessage,
-  giveHint
+  giveHint,
 };
 
 /**
