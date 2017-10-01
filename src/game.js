@@ -5,6 +5,7 @@
 const util = require('./util');
 const wordlist = require('./wordlist');
 const WIN_SCORE = 5;
+const BASE_GUESS_POINTS = 10;
 
 let rooms = {};
 
@@ -69,21 +70,27 @@ const giveHint = function() {
  */
 const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
-  let drawing = this.room.currentDrawer() == this.socket.id;
-  if (room.checkGuess(data, socket.id) == util.CORRECT_GUESS) {
-    if (drawing) {
-      socket.emit('chatMessage','Please don\'t reveal the word in chat');
+  // if the sender can guess (not drawer and hasn't successfully guessed)
+  let isGuessing = room.currentDrawer() !== this.socket.id && !room.guessed[this.name];
+  // if the guess is correct or close)
+  let isCorrect = util.checkGuess(room.currentWord, data);
+  if (isCorrect === util.CORRECT_GUESS) {
+    if (isGuessing) {
+      // player correctly guessed
+      this.room.awardPoints(this.socket.id);
+      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); // to everyone else
+      socket.emit('chatMessage', `You guessed the word: ${data}!`); // to self
     } else {
-      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} guessed the word: ${data}.`); //to everyone else
-      socket.emit('chatMessage', `You guessed the word: ${data}!`) //to self
+      socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
-  } else if (room.checkGuess(data, socket.id) == util.CLOSE_GUESS) {
-    if (drawing) {
-      socket.emit('chatMessage','Please don\'t reveal the word in chat');
+  } else if (isCorrect === util.CLOSE_GUESS) {
+    if (isGuessing) {
+      socket.emit('chatMessage', `${data} is close!`); //to self      
     } else {
-      socket.emit('chatMessage', `${data} is close!`) //to self
+      socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
   } else {
+    // just a normal message
     io.to(room.id).emit('chatMessage', `${this.name}: ${data}`);
   }
 };
@@ -147,34 +154,23 @@ const currentDrawer = function() {
 };
 
 /**
- * Check whether the guess matches the current word
- * @param guess The word guessed
- * @param id The client's ID
- * @returns {*} How close the guess is
- */
-const checkGuess = function(guess,id) {
-  let drawing = (this.drawer == id);
-  let result = util.checkGuess(this.currentWord,guess);
-  if (result == util.CORRECT_GUESS && !drawing) {
-    this.endRound(id);
-  }
-  return result;
-};
-
-/**
- * Ends the current round and updates the score
+ * Awards points for a round and maybe ends it
  * @param winner The winner of the round, or null if no one won
  */
-const endRound = function(winner) {
-  this.state = ROUND_ENDED;
-  if (winner) {
-    this.addScore(winner, 1);
-    this.addScore(this.drawer, 1);
-    this.io.to(this.id).emit('updateScore',this.score);
-  }
-  // move to round if game isn't over
-  if (this.state === ROUND_ENDED)
+const awardPoints = function(winner) {
+  const correctGuesses = Object.keys(this.guessed).length;
+  const value = BASE_GUESS_POINTS - correctGuesses - this.hintsGiven;
+  console.log('worth ' + value + ' points.');
+  this.addScore(winner, value);
+  this.addScore(this.drawer, 4 - this.hintsGiven);
+  this.guessed[winner] = value;
+
+  console.log(value, this.guessed, this.guessers);
+  // if either everyone has successfully guessed, or guesses are no longer worth points
+  if (value === 1 || Object.keys(this.guessed).length === this.guessers) {
     this.nextRound();
+  }
+  this.io.to(this.id).emit('updateScore',this.score);
 };
 
 /**
@@ -193,6 +189,8 @@ const nextRound = function() {
   else
     this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
   this.clicks = [];
+  this.guessers = users.length;
+  this.guessed = {};
   this.currentWord = wordlist.getRandomWord();
   this.hintsGiven = 0;
   io.to(this.id).emit('hint', "");
@@ -248,7 +246,7 @@ const removeUser = function(user) {
   delete this.score[this.names[user]];
   delete this.names[user];
   if (user == this.drawer || this.users.length <= 1) {
-    this.endRound();
+    this.nextRound();
     this.clearClicks();
   }
 };
@@ -323,6 +321,7 @@ function Room(io,id) {
   this.users = [];
   this.score = {};
   this.names = {};
+  this.guessed = {};
   this.clicks = [];
   this.hintsGiven = 0;
 }
@@ -333,11 +332,10 @@ Room.prototype = {
   addUser,
   removeUser,
   getState,
+  awardPoints,
   addScore,
   addClick,
   clearClicks,
-  endRound,
-  checkGuess,
   hasName
 };
 
