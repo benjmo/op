@@ -85,7 +85,7 @@ const chatMessage = function (data) {
       // player correctly guessed
       this.room.awardPoints(this.socket.id);
       socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); // to everyone else
-      socket.emit('chatMessage', `You guessed the word: ${data}!`); // to self
+      socket.emit('chatMessage', `You guessed the word: ${room.currentWord}!`); // to self
     } else {
       socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
