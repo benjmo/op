@@ -62,7 +62,7 @@ $(document).ready(function () {
   socket.on('gameDetails', (data) => {
     console.log(data)
     updateScore(data.score);
-    updateStatus(data.status);
+    updateStatus(data.state);
     whiteboard.load(data.clicks);
   }).on('updateScore', (score) => {
     updateScore(score);
