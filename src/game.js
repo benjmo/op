@@ -5,7 +5,13 @@
 const util = require('./util');
 const wordlist = require('./wordlist');
 const WIN_SCORE = 5;
-const BASE_GUESS_POINTS = 10;
+
+// base points for guessing correctly
+const POINTS_GUESS = 10;
+// reduction in points for each person who's already guessed
+const POINTS_REDUCE = 3;
+// base points for your drawing getting guessed (per correct guess)
+const POINTS_DRAW = 4;
 
 let rooms = {};
 let shapes = ['rectangle','circle','line'];
@@ -164,17 +170,17 @@ const currentDrawer = function() {
  * @param winner The winner of the round, or null if no one won
  */
 const awardPoints = function(winner) {
-  const correctGuesses = Object.keys(this.pointsEarned).length;
-  const value = BASE_GUESS_POINTS - correctGuesses - this.hintsGiven;
+  // drawer gets pointsEarned in a round
+  const correctGuesses = Object.keys(this.pointsEarned).length - 1;
+  const value = POINTS_GUESS - correctGuesses * POINTS_REDUCE - this.hintsGiven;
   console.log('worth ' + value + ' points.');
   this.addScore(winner, value);
-  this.addScore(this.drawer, 4 - this.hintsGiven);
+  this.addScore(this.drawer, POINTS_DRAW - this.hintsGiven);
   this.pointsEarned[this.names[winner]] = value;
   this.pointsEarned[this.names[this.drawer]] += (4 - this.hintsGiven);
 
-  console.log(this.pointsEarned, this.names);
   // if either everyone has successfully guessed, or guesses are no longer worth points
-  if (value === 1 || Object.keys(this.pointsEarned).length === this.users.length) {
+  if (value - POINTS_REDUCE <= 0 || Object.keys(this.pointsEarned).length === this.users.length) {
     let roundEndString = '<p>The round is over! Points earned:</p>\n';
     for (const player of Object.keys(this.pointsEarned)) {
       roundEndString += '<p>' + player + ': ' + this.pointsEarned[player] + '</p>'
