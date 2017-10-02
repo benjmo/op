@@ -77,15 +77,15 @@ const giveHint = function() {
 const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
   // if the sender can guess (not drawer and hasn't successfully guessed)
-  let isGuessing = room.currentDrawer() !== this.socket.id && !room.guessed[this.name];
+  let isGuessing = room.currentDrawer() !== this.socket.id && !room.pointsEarned[this.name];
   // if the guess is correct or close)
   let isCorrect = util.checkGuess(room.currentWord, data);
   if (isCorrect === util.CORRECT_GUESS) {
     if (isGuessing) {
       // player correctly guessed
-      this.room.awardPoints(this.socket.id);
       socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); // to everyone else
       socket.emit('chatMessage', `You guessed the word: ${room.currentWord}!`); // to self
+      this.room.awardPoints(this.socket.id);
     } else {
       socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
@@ -97,7 +97,7 @@ const chatMessage = function (data) {
     }
   } else {
     // just a normal message
-    io.to(room.id).emit('chatMessage', `${this.name}: ${data}`);
+    io.to(room.id).emit('chatMessage', `<strong>${this.name}</strong>: ${data}`);
   }
 };
 
@@ -164,16 +164,22 @@ const currentDrawer = function() {
  * @param winner The winner of the round, or null if no one won
  */
 const awardPoints = function(winner) {
-  const correctGuesses = Object.keys(this.guessed).length;
+  const correctGuesses = Object.keys(this.pointsEarned).length;
   const value = BASE_GUESS_POINTS - correctGuesses - this.hintsGiven;
   console.log('worth ' + value + ' points.');
   this.addScore(winner, value);
   this.addScore(this.drawer, 4 - this.hintsGiven);
-  this.guessed[winner] = value;
+  this.pointsEarned[this.names[winner]] = value;
+  this.pointsEarned[this.names[this.drawer]] += (4 - this.hintsGiven);
 
-  console.log(value, this.guessed, this.guessers);
+  console.log(this.pointsEarned, this.names);
   // if either everyone has successfully guessed, or guesses are no longer worth points
-  if (value === 1 || Object.keys(this.guessed).length === this.guessers) {
+  if (value === 1 || Object.keys(this.pointsEarned).length === this.users.length) {
+    let roundEndString = '<p>The round is over! Points earned:</p>\n';
+    for (const player of Object.keys(this.pointsEarned)) {
+      roundEndString += '<p>' + player + ': ' + this.pointsEarned[player] + '</p>'
+    }
+    this.io.to(this.id).emit('chatMessage', roundEndString);
     this.nextRound();
   }
   this.io.to(this.id).emit('updateScore',this.score);
@@ -195,12 +201,13 @@ const nextRound = function() {
   else
     this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
   this.clicks = [];
-  this.guessers = users.length;
-  this.guessed = {};
+  this.pointsEarned = {};
+  this.pointsEarned[room.names[room.drawer]] = 0;
   this.currentWord = wordlist.getRandomWord();
   this.hintsGiven = 0;
   io.to(this.id).emit('hint', "");
   io.to(this.id).emit('nextRound');
+  io.to(this.id).emit('chatMessage', 'The next round will begin soon...')
   setTimeout(function() {
     io.to(room.id).emit('nextRound', {
       drawer: room.drawer,
@@ -327,7 +334,7 @@ function Room(io,id) {
   this.users = [];
   this.score = {};
   this.names = {};
-  this.guessed = {};
+  this.pointsEarned = {};
   this.clicks = [];
   this.hintsGiven = 0;
 }

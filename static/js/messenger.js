@@ -43,7 +43,7 @@
         return false;
       });
       opts.socket.on('chatMessage', (msg) => {
-        messageDiv.append($('<li>').text(msg));
+        messageDiv.append($('<li>').append(msg));
         scrollBottom();
       });
     });
