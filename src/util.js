@@ -1,3 +1,5 @@
+const sanitizeHtml = require('sanitize-html');
+
 const CORRECT_GUESS = 0;
 const INCORRECT_GUESS = 1;
 const CLOSE_GUESS = 2;
@@ -140,9 +142,16 @@ String.prototype.replaceAt=function(index, replacement) {
     return this.substr(0, index) + replacement+ this.substr(index + replacement.length);
 }
 
+const sanitize = function(html) {
+  return sanitizeHtml(html, {
+    allowedTags: ['b', 'i', 'em', 'strong', 'strike', 'code'],
+  });
+};
+
 module.exports = {
   checkGuess,
   giveHint,
+  sanitize,
   CORRECT_GUESS,
   INCORRECT_GUESS,
   CLOSE_GUESS
