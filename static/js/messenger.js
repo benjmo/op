@@ -50,7 +50,6 @@
   };
 
   $.fn.pictMessenger.defaults = {
-    socket: io(),
     height: 33
   };
 })(jQuery);

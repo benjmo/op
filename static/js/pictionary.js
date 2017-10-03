@@ -44,31 +44,49 @@ const updateHint = (hint) => {
   } else {
     $("#hintText").text('Hint: ' +  hint);
   }
-}
+};
 
 $(document).ready(function () {
   let socket = io();
   let params = (new URL(document.location)).searchParams;
   let whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
   let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
+  let error = false;
+  let id;
   let game = params.get("game");
-  if (game)
-    socket.emit('joinRoom', game);
-  else {
-    alert('No Game ID entered');
+  socket.on('clientInfo', (data) =>  {
+    console.log(data);
+    if (!data.name) {
+      if (game) {
+        socket.emit('joinRoom', game);
+      } else {
+        alert('No Game entered');
+        error = true;
+        return;
+      }
+      get_username(socket);
+    }
+    id = data.id;
+  });
+  if (error)
     return;
-  }
-  get_username(socket);
   socket.on('gameDetails', (data) => {
-    console.log(data)
     updateScore(data.score);
     updateStatus(data.state);
     whiteboard.load(data.clicks);
   }).on('updateScore', (score) => {
     updateScore(score);
   }).on('nextRound', (data) => {
-    if (data)
+    if (data) {
       updateScore(data.score);
+      let drawing = data.drawer == socket.id;
+      whiteboard.setDrawable(drawing);
+      if (drawing) {
+        $('#pictStatus').html(`Your word is <strong>${data.currentWord}</strong>`);
+      } else {
+        $('#pictStatus').text(`${data.drawerName}'s turn to draw`);
+      }
+    }
   }).on('status', (status) => {
     updateStatus(status);
   }).on('hint', (hint) => {

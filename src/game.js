@@ -13,6 +13,9 @@ const POINTS_REDUCE = 3;
 // base points for your drawing getting guessed (per correct guess)
 const POINTS_DRAW = 4;
 
+// maximum time to wait for reconnection before timing out a user (in ms)
+const TIME_OUT = 5000;
+
 let rooms = {};
 let shapes = ['rectangle','circle','line'];
 
@@ -28,11 +31,18 @@ const joinRoom = function (room) {
 /**
  * Leave the channel the client is currently in
  */
-const leaveRoom = function () {
+const disconnect = function () {
   if (this.room)
     this.socket.leave(this.room.id, () => {
-      this.room.removeUser(this.socket.id);
+      this.room.disconnectUser(this.socket.id);
     })
+};
+
+const reconnect = function (room) {
+  if (room) {
+    joinRoom(room);
+    room.reconnectUser(this.getID());
+  }
 };
 
 /**
@@ -41,7 +51,7 @@ const leaveRoom = function () {
  * @param data Mouse action including x, y, action type
  */
 const draw = function (data) {
-  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)) {
+  if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null)) {
     this.io.to(this.room.id).emit('draw', data);
     if (shapes.includes(data.tool)) {
       if (data.status == "end")
@@ -57,7 +67,7 @@ const draw = function (data) {
  * Only allows the current drawer to clear, unless noone has been assigned yet
  */
 const clearDrawing = function () {
-  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null)) {
+  if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null)) {
     this.room.clearClicks();
   }
 };
@@ -66,7 +76,7 @@ const clearDrawing = function () {
  * Gives a hint to everyone
  */
 const giveHint = function() {
-  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null) &&
+  if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null) &&
       this.room.hintsGiven < 3) {
     let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
     this.io.to(this.room.id).emit('hint', hint);
@@ -83,7 +93,7 @@ const giveHint = function() {
 const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
   // if the sender can guess (not drawer and hasn't successfully guessed)
-  let isGuessing = room.currentDrawer() !== this.socket.id && !room.pointsEarned[this.name];
+  let isGuessing = room.currentDrawer() !== this.getID() && !room.pointsEarned[this.name];
   // if the guess is correct or close)
   let isCorrect = util.checkGuess(room.currentWord, data);
   if (isCorrect === util.CORRECT_GUESS) {
@@ -91,7 +101,7 @@ const chatMessage = function (data) {
       // player correctly guessed
       socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); // to everyone else
       socket.emit('chatMessage', `You guessed the word: ${room.currentWord}!`); // to self
-      this.room.awardPoints(this.socket.id);
+      this.room.awardPoints(this.getID());
     } else {
       socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
@@ -118,30 +128,47 @@ const nameMessage = function (name) {
   let unique = !room.hasName(name);
   if (unique) {
     this.name = name;
-    room.addUser(this.socket.id,this.name)
+    room.addUser(this.getID(),this.name)
     this.socket.emit('gameDetails',room.getState());
     this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`); // broadcast to everyone in the room
   }
   return unique;
 };
 
+const getName = function () {
+  return this.name;
+};
+
+const setName = function (name) {
+  this.name = name;
+};
+
 /**
  * Skip current users drawing turn
  */
 const skipDrawing = function () {
-  if (this.room && (this.room.currentDrawer() == this.socket.id || this.room.currentDrawer() == null))
+  if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null))
     this.room.nextRound();
+};
+
+const getID = function () {
+  return this.id;
 };
 
 /**
  * Client Object
  * @param io socket.io instance
  * @param socket socket.io socket of client
+ * @param id id of client
  * @constructor
  */
-function Client(io,socket) {
+function Client(io,socket,id) {
   this.io = io;
   this.socket = socket;
+  if (id)
+    this.id = id;
+  else
+    this.id = socket.id;
   this.room = null;
   this.name = null;
 }
@@ -151,10 +178,14 @@ Client.prototype = {
   chatMessage,
   draw,
   joinRoom,
-  leaveRoom,
+  disconnect,
+  reconnect,
   clearDrawing,
   nameMessage,
+  getName,
+  setName,
   giveHint,
+  getID,
 };
 
 /**
@@ -260,14 +291,23 @@ const addUser = function(user, name) {
  * or there are not enough players remaining
  * @param user User's ID
  */
-const removeUser = function(user) {
-  this.users.splice(this.users.indexOf(user),1);
-  delete this.score[this.names[user]];
-  delete this.names[user];
-  if (user == this.drawer || this.users.length <= 1) {
-    this.nextRound();
-    this.clearClicks();
-  }
+const disconnectUser = function(user) {
+  this.timeOut[user] = true;
+  setTimeout(() => {
+    if (this.timeOut[user]) {
+      this.users.splice(this.users.indexOf(user),1);
+      delete this.score[this.names[user]];
+      delete this.names[user];
+      if (user == this.drawer || this.users.length <= 1) {
+        this.nextRound();
+        this.clearClicks();
+      }
+    }
+  }, TIME_OUT);
+};
+
+const reconnectUser = function (user) {
+  this.timeOut[user] = false;
 };
 
 /**
@@ -341,6 +381,7 @@ function Room(io,id) {
   this.score = {};
   this.names = {};
   this.pointsEarned = {};
+  this.timeOut = {};
   this.clicks = [];
   this.hintsGiven = 0;
 }
@@ -349,7 +390,8 @@ Room.prototype = {
   currentDrawer,
   nextRound,
   addUser,
-  removeUser,
+  disconnectUser,
+  reconnectUser,
   getState,
   awardPoints,
   addScore,
@@ -360,8 +402,8 @@ Room.prototype = {
 
 module.exports = function (io) {
   return {
-    createClient: function (socket) {
-      return new Client(io,socket);
+    createClient: function (socket,id) {
+      return new Client(io,socket,id);
     },
     createRoom: function (id) {
       return new Room(io, id);

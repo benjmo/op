@@ -20,7 +20,7 @@
     this.options = $.extend({}, defaults, options);
     this._defaults = defaults;
     this._name = pluginName;
-
+    this.drawing = true;
     this.drawingTool = 'pencil';
     this.isFilled = false;
     this.color = '#000000';
@@ -113,7 +113,7 @@
          * Listeners for mouse events
          */
         $(canvas).mousedown(function (e) {
-          if (!plugin.options.drawing)
+          if (!plugin.drawing)
             return;
 
           //$(canvas).attr("width", $(canvas).outerWidth()).attr("height", canvas.width);
@@ -151,7 +151,7 @@
             });
           }
         }).mousemove(function (e) {
-          if (!plugin.options.drawing)
+          if (!plugin.drawing)
             return;
           if (paint) {
             let height = this.height, width = this.width;
@@ -214,7 +214,7 @@
           // Drawing cleared by drawer, so we have to clear our board locally
           plugin.clear();
         }).on('nextRound', (data) => {
-          console.log(data);
+          // console.log(data);
           let interval;
           if (data == null) {
             let time = 5;
@@ -230,12 +230,6 @@
             },1000);
           } else {
             clearInterval(interval);
-            plugin.options.drawing = data.drawer == socket.id;
-            if (plugin.options.drawing) {
-              $('#pictStatus').html(`Your word is <strong>${data.currentWord}</strong>`);
-            } else {
-              $('#pictStatus').text(`${data.drawerName}'s turn to draw`);
-            }
           }
         });
       }
@@ -464,6 +458,10 @@
           pixIdx += canvas.width * PIXEL_SIZE;
         }
       }
+    },
+
+    setDrawable: function (draw) {
+      this.drawing = draw;
     }
   };
 
