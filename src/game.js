@@ -86,6 +86,7 @@ const chatMessage = function (data) {
   let isGuessing = room.currentDrawer() !== this.socket.id && !room.pointsEarned[this.name];
   // if the guess is correct or close)
   let isCorrect = util.checkGuess(room.currentWord, data);
+  data = util.sanitize(data);
   if (isCorrect === util.CORRECT_GUESS) {
     if (isGuessing) {
       // player correctly guessed
@@ -117,7 +118,7 @@ const nameMessage = function (name) {
   let room = this.room;
   let unique = !room.hasName(name);
   if (unique) {
-    this.name = name;
+    this.name = util.sanitize(name);
     room.addUser(this.socket.id,this.name)
     this.socket.emit('gameDetails',room.getState());
     this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`); // broadcast to everyone in the room
