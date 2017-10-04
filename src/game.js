@@ -13,6 +13,9 @@ const POINTS_REDUCE = 3;
 // base points for your drawing getting guessed (per correct guess)
 const POINTS_DRAW = 4;
 
+// amount of time given for a new round (in seconds)
+const ROUND_DURATION = 120;
+
 // maximum time to wait for reconnection before timing out a user (in ms)
 const TIME_OUT = 5000;
 
@@ -207,20 +210,33 @@ const awardPoints = function(winner) {
   console.log('worth ' + value + ' points.');
   this.addScore(winner, value);
   this.addScore(this.drawer, POINTS_DRAW - this.hintsGiven);
+  this.io.to(this.id).emit('updateScore', this.score);
   this.pointsEarned[this.names[winner]] = value;
   this.pointsEarned[this.names[this.drawer]] += (4 - this.hintsGiven);
 
   // if either everyone has successfully guessed, or guesses are no longer worth points
   if (value - POINTS_REDUCE <= 0 || Object.keys(this.pointsEarned).length === this.users.length) {
-    let roundEndString = '<p>The round is over! Points earned:</p>\n';
+    this.endRound();
+  }
+};
+
+/**
+ * Ends the current round, showing a points summary in the chat
+ */
+const endRound = function() {
+  const correctGuesses = Object.keys(this.pointsEarned).length - 1;
+  let roundEndString;
+  if (correctGuesses === 0) {
+    roundEndString = 'The round is over!';
+  } else {
+    roundEndString = '<p>The round is over! Points earned:</p>\n';
     for (const player of Object.keys(this.pointsEarned)) {
       roundEndString += '<p>' + player + ': ' + this.pointsEarned[player] + '</p>'
     }
-    this.io.to(this.id).emit('chatMessage', roundEndString);
-    this.nextRound();
   }
-  this.io.to(this.id).emit('updateScore',this.score);
-};
+  this.io.to(this.id).emit('chatMessage', roundEndString);
+  this.nextRound();
+}
 
 /**
  * Starts the next round if there are enough players and updates the game state
@@ -228,6 +244,7 @@ const awardPoints = function(winner) {
 const nextRound = function() {
   let users = this.users, io = this.io, room = this;
   console.log(users);
+  this.clearRoundTimer();
   if (users.length <= 1) {
     this.state = WAITING;
     this.io.to(this.id).emit('status',WAITING);
@@ -252,9 +269,32 @@ const nextRound = function() {
       currentWord: room.currentWord,
       score: room.score
     });
+    room.setRoundTimer(ROUND_DURATION);
     room.state = IN_PROGRESS;
   },5000);
 };
+
+/**
+ * Sets the timer for the current round to the given seconds
+ * @param seconds a positive integer number of seconds
+ */
+const setRoundTimer = function(seconds) {
+  // clear any previously running round timer
+  clearTimeout(this.roundTimerID);
+
+  this.io.to(this.id).emit('roundTimer', seconds);
+  this.roundTimerID = setTimeout(() => {
+    this.endRound();
+  }, seconds * 1000);
+};
+
+/**
+ * Clears any previously running round timer
+ */
+const clearRoundTimer = function() {
+  clearTimeout(this.roundTimerID);
+  this.io.to(this.id).emit('roundTimer', null);
+}
 
 /**
  * Gives points to a user
@@ -384,11 +424,15 @@ function Room(io,id) {
   this.timeOut = {};
   this.clicks = [];
   this.hintsGiven = 0;
+  this.roundTimerID;
 }
 
 Room.prototype = {
   currentDrawer,
+  endRound,
   nextRound,
+  setRoundTimer,
+  clearRoundTimer,
   addUser,
   disconnectUser,
   reconnectUser,

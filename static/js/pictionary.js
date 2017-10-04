@@ -4,7 +4,9 @@ const STARTING = 2;
 const IN_PROGRESS = 3;
 const ROUND_ENDED = 4;
 const GAME_OVER = 5;
-let whiteboard;
+
+// identifier for the round timer that decrements every second
+let roundTimerID;
 
 const updateScore = (score) => {
   let scoreboard = $('#pictScore tbody').empty();
@@ -35,6 +37,30 @@ const updateStatus = (status) => {
     case GAME_OVER:
       statusText.text(`Game Over: New Game starting soon`);
       break;
+  }
+};
+
+/**
+ * Updates the round timer to begin counting down from the given seconds
+ * or clears the timer if seconds evaluates to false
+ */
+const updateRoundTimer = (seconds) => {
+  // cancel any previously running round timer
+  clearInterval(roundTimerID);
+
+  if (!seconds) {
+    $("#roundTimer").text('');
+  } else {
+    $("#roundTimer").text(new Date(seconds * 1000).toISOString().substr(14, 5));
+
+    // set the round timer to decrement every second
+    roundTimerID = setInterval(() => {
+      seconds -= 1;
+      $("#roundTimer").text(new Date(seconds * 1000).toISOString().substr(14, 5));
+      if (seconds === 0) {
+        clearInterval(roundTimerID);
+      }
+    }, 1000);
   }
 };
 
@@ -87,6 +113,8 @@ $(document).ready(function () {
         $('#pictStatus').text(`${data.drawerName}'s turn to draw`);
       }
     }
+  }).on('roundTimer', (seconds) => {
+    updateRoundTimer(seconds);
   }).on('status', (status) => {
     updateStatus(status);
   }).on('hint', (hint) => {
