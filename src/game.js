@@ -154,8 +154,10 @@ const setName = function (name) {
  * Skip current users drawing turn
  */
 const skipDrawing = function () {
-  if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null))
+  if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null) &&
+      Object.keys(this.room.pointsEarned).length <= 1) {
     this.room.nextRound();
+  }
 };
 
 const getID = function () {
