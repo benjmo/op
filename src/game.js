@@ -15,6 +15,10 @@ const POINTS_DRAW = 4;
 
 // amount of time given for a new round (in seconds)
 const ROUND_DURATION = 120;
+// scaling factor to modify the time remaining after the first correct guess
+const TIME_MODIFIER = 6;
+// minimum amount of time remaining after the first correct guess (in seconds)
+const MIN_MODIFIED_TIME = 10;
 
 // maximum time to wait for reconnection before timing out a user (in ms)
 const TIME_OUT = 5000;
@@ -217,6 +221,12 @@ const awardPoints = function(winner) {
   // if either everyone has successfully guessed, or guesses are no longer worth points
   if (value - POINTS_REDUCE <= 0 || Object.keys(this.pointsEarned).length === this.users.length) {
     this.endRound();
+  } else if (correctGuesses === 0) {
+    // if this was the first correct guess, modify the time remaining in the round
+    const currentTime = (this.roundEndTime - Date.now()) / 1000;
+    const modifiedTime = Math.round((currentTime / TIME_MODIFIER) + MIN_MODIFIED_TIME);
+    this.setRoundTimer(modifiedTime);
+    this.io.to(this.id).emit('chatMessage', 'Only ' + modifiedTime + ' seconds remaining');
   }
 };
 
@@ -354,7 +364,7 @@ const reconnectUser = function (user) {
 
 /**
  * Gets the current game state
- * @returns {state: *, drawer: *, drawerName: *, currentWord: *, score: *, clicks: *, seconds: *}
+ * @returns {{state: *, drawer: *, drawerName: *, currentWord: *, score: *, clicks: *, seconds: *}}
  */
 const getState = function () {
   return {
