@@ -16,7 +16,7 @@ const updateScore = (score) => {
   }
 };
 
-const updateStatus = (status) => {
+const updateStatus = (status, drawing, drawerName, currentWord) => {
   let statusText = $('#pictStatus');
   switch (status) {
     case NOT_STARTED:
@@ -29,7 +29,11 @@ const updateStatus = (status) => {
       statusText.text(`New Round Starting`);
       break;
     case IN_PROGRESS:
-      statusText.text(`Round in progress`);
+      if (drawing) {
+        statusText.html(`Your word is <strong>${currentWord}</strong>`);
+      } else {
+        statusText.text(`${drawerName}'s turn to draw`);
+      }
       break;
     case ROUND_ENDED:
       statusText.text(`New Round starting soon`);
@@ -97,21 +101,21 @@ $(document).ready(function () {
   if (error)
     return;
   socket.on('gameDetails', (data) => {
+    if (data.seconds > 0) {
+      updateRoundTimer(data.seconds);
+    }
     updateScore(data.score);
-    updateStatus(data.state);
+    const drawing = data.drawer == socket.id;
+    updateStatus(data.state, drawing, data.drawerName, data.currentWord);
     whiteboard.load(data.clicks);
   }).on('updateScore', (score) => {
     updateScore(score);
   }).on('nextRound', (data) => {
     if (data) {
       updateScore(data.score);
-      let drawing = data.drawer == socket.id;
+      const drawing = data.drawer == socket.id;
       whiteboard.setDrawable(drawing);
-      if (drawing) {
-        $('#pictStatus').html(`Your word is <strong>${data.currentWord}</strong>`);
-      } else {
-        $('#pictStatus').text(`${data.drawerName}'s turn to draw`);
-      }
+      updateStatus(IN_PROGRESS, drawing, data.drawerName, data.currentWord);
     }
   }).on('roundTimer', (seconds) => {
     updateRoundTimer(seconds);

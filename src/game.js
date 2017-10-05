@@ -38,7 +38,7 @@ const disconnect = function () {
   if (this.room)
     this.socket.leave(this.room.id, () => {
       this.room.disconnectUser(this.socket.id);
-    })
+    });
 };
 
 const reconnect = function (room) {
@@ -131,9 +131,9 @@ const nameMessage = function (name) {
   let unique = !room.hasName(name);
   if (unique) {
     this.name = name;
-    room.addUser(this.getID(),this.name)
-    this.socket.emit('gameDetails',room.getState());
+    this.socket.emit('gameDetails', room.getState());
     this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`); // broadcast to everyone in the room
+    room.addUser(this.getID(), this.name);
   }
   return unique;
 };
@@ -236,7 +236,7 @@ const endRound = function() {
   }
   this.io.to(this.id).emit('chatMessage', roundEndString);
   this.nextRound();
-}
+};
 
 /**
  * Starts the next round if there are enough players and updates the game state
@@ -261,7 +261,7 @@ const nextRound = function() {
   this.hintsGiven = 0;
   io.to(this.id).emit('hint', "");
   io.to(this.id).emit('nextRound');
-  io.to(this.id).emit('chatMessage', 'The next round will begin soon...')
+  io.to(this.id).emit('chatMessage', 'The next round will begin soon...');
   setTimeout(function() {
     io.to(room.id).emit('nextRound', {
       drawer: room.drawer,
@@ -286,6 +286,7 @@ const setRoundTimer = function(seconds) {
   this.roundTimerID = setTimeout(() => {
     this.endRound();
   }, seconds * 1000);
+  this.roundEndTime = Date.now() + seconds * 1000;
 };
 
 /**
@@ -294,7 +295,8 @@ const setRoundTimer = function(seconds) {
 const clearRoundTimer = function() {
   clearTimeout(this.roundTimerID);
   this.io.to(this.id).emit('roundTimer', null);
-}
+  this.roundEndTime = 0;
+};
 
 /**
  * Gives points to a user
@@ -352,16 +354,18 @@ const reconnectUser = function (user) {
 
 /**
  * Gets the current game state
- * @returns {{drawer: *, state: *, names: *, score: *, clicks: *}}
+ * @returns {state: *, drawer: *, drawerName: *, currentWord: *, score: *, clicks: *, seconds: *}
  */
 const getState = function () {
   return {
-    drawer: this.drawer,
     state: this.state,
-    names: this.names,
+    drawer: this.drawer,
+    drawerName: this.names[this.drawer],
+    currentWord: this.currentWord,
     score: this.score,
-    clicks: this.clicks
-  }
+    clicks: this.clicks,
+    seconds: Math.round((this.roundEndTime - Date.now()) / 1000) // seconds left in the round
+  };
 };
 
 /**
@@ -425,6 +429,7 @@ function Room(io,id) {
   this.clicks = [];
   this.hintsGiven = 0;
   this.roundTimerID;
+  this.roundEndTime = 0;
 }
 
 Room.prototype = {
