@@ -2,7 +2,7 @@ const express = require('express');
 const session = require("express-session")({
   secret: "helloworld",
   resave: true,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     secure: false,
   },
@@ -42,27 +42,19 @@ io.use(sharedsession(session, {
 /* top level socket.io stuff goes here */
 io.on('connection', function (socket) {
   console.log('a user connected');
-  console.log(socket.handshake.sessionID);
-  // let client = game.createClient(socket, socket.handshake.sessionID);
-  let client = game.createClient(socket);
+  console.log('SID:' +socket.handshake.sessionID);
   let session = socket.handshake.session;
-  // if (session.name)
-  //   client.setName(session.name);
-  // if (session.room)
-  //   client.reconnect(game.getRoom(session.room));
+  let client = game.createClient(socket, session, socket.handshake.sessionID);
+  if (session.name)
+    client.setName(session.name);
+  if (session.room)
+    client.reconnect(game.getRoom(session.room));
   socket.emit('clientInfo',{room:session.room,
-    name:session.name,id:socket.handshake.sessionID});
-  socket.on('nameMessage',(data) => {
-    let unique = client.nameMessage(data);
-    socket.emit('nameMessage',unique);
-    if (unique) {
-      session.name = data;
-    }
-  });
-  socket.on('joinRoom', (data) => {
-    client.joinRoom(game.getRoom(data));
-    session.room = data;
-  });
+    name:session.name,id:client.getID(),status:session.inGame});
+  socket.on('nameMessage',(data) =>
+    socket.emit('nameMessage',client.nameMessage(data)));
+  socket.on('joinRoom', (data) =>
+    client.joinRoom(game.getRoom(data)));
   socket.on('draw', (data) => client.draw(data));
   socket.on('chatMessage', (data) => client.chatMessage(data));
   socket.on('skipDrawing', () => client.skipDrawing());

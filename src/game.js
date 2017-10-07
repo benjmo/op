@@ -21,7 +21,7 @@ const TIME_MODIFIER = 6;
 const MIN_MODIFIED_TIME = 10;
 
 // maximum time to wait for reconnection before timing out a user (in ms)
-const TIME_OUT = 5000;
+const TIME_OUT = 10000;
 
 let rooms = {};
 let shapes = ['rectangle','circle','line'];
@@ -33,6 +33,10 @@ let shapes = ['rectangle','circle','line'];
 const joinRoom = function (room) {
   this.socket.join(room.id);
   this.room = room;
+  this.session.room = room.id;
+  this.session.save();
+  this.session.inGame = true;
+  this.session.save();
 };
 
 /**
@@ -41,13 +45,13 @@ const joinRoom = function (room) {
 const disconnect = function () {
   if (this.room)
     this.socket.leave(this.room.id, () => {
-      this.room.disconnectUser(this.socket.id);
+      this.room.disconnectUser(this.getID(),this.session);
     });
 };
 
 const reconnect = function (room) {
   if (room) {
-    joinRoom(room);
+    this.joinRoom(room);
     room.reconnectUser(this.getID());
   }
 };
@@ -102,7 +106,7 @@ const chatMessage = function (data) {
   // if the sender can guess (not drawer and hasn't successfully guessed)
   let isGuessing = room.currentDrawer() !== this.getID() && !room.pointsEarned[this.name];
   // if the guess is correct or close)
-  let isCorrect = util.checkGuess(room.currentWord, data);
+  let isCorrect = room.currentWord != "" && util.checkGuess(room.currentWord, data);
   if (isCorrect === util.CORRECT_GUESS) {
     if (isGuessing) {
       // player correctly guessed
@@ -138,6 +142,8 @@ const nameMessage = function (name) {
     this.socket.emit('gameDetails', room.getState());
     this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`); // broadcast to everyone in the room
     room.addUser(this.getID(), this.name);
+    this.session.name = name;
+    this.session.save();
   }
   return unique;
 };
@@ -168,12 +174,14 @@ const getID = function () {
  * Client Object
  * @param io socket.io instance
  * @param socket socket.io socket of client
+ * @param session session object of client
  * @param id id of client
  * @constructor
  */
-function Client(io,socket,id) {
+function Client(io,socket,session,id) {
   this.io = io;
   this.socket = socket;
+  this.session = session;
   if (id)
     this.id = id;
   else
@@ -345,23 +353,28 @@ const addUser = function(user, name) {
  * or there are not enough players remaining
  * @param user User's ID
  */
-const disconnectUser = function(user) {
+const disconnectUser = function(user,session) {
+  session.inGame = false;
+  session.save();
   this.timeOut[user] = true;
   setTimeout(() => {
     if (this.timeOut[user]) {
       this.users.splice(this.users.indexOf(user),1);
       delete this.score[this.names[user]];
       delete this.names[user];
+      session.destroy();
       if (user == this.drawer || this.users.length <= 1) {
         this.nextRound();
         this.clearClicks();
       }
+      this.io.to(this.id).emit('updateScore',this.score);
     }
   }, TIME_OUT);
 };
 
 const reconnectUser = function (user) {
   this.timeOut[user] = false;
+  this.io.to(this.id).emit('updateScore',this.score);
 };
 
 /**
@@ -463,8 +476,8 @@ Room.prototype = {
 
 module.exports = function (io) {
   return {
-    createClient: function (socket,id) {
-      return new Client(io,socket,id);
+    createClient: function (socket,session,id) {
+      return new Client(io,socket,session,id);
     },
     createRoom: function (id) {
       return new Room(io, id);

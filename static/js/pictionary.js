@@ -79,13 +79,17 @@ const updateHint = (hint) => {
 $(document).ready(function () {
   let socket = io();
   let params = (new URL(document.location)).searchParams;
-  let whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
-  let messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
-  let error = false;
-  let id;
+  let id = socket.id;
   let game = params.get("game");
+  let whiteboard, messenger;
+  let error = false;
   socket.on('clientInfo', (data) =>  {
     console.log(data);
+    if (data.status) {
+      alert('Already in a game');
+      error = true;
+      return;
+    }
     if (!data.name) {
       if (game) {
         socket.emit('joinRoom', game);
@@ -97,23 +101,27 @@ $(document).ready(function () {
       get_username(socket);
     }
     id = data.id;
+    whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
+    messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
   });
   if (error)
     return;
+  console.log('Test');
   socket.on('gameDetails', (data) => {
     if (data.seconds > 0) {
       updateRoundTimer(data.seconds);
     }
     updateScore(data.score);
-    const drawing = data.drawer == socket.id;
+    const drawing = data.drawer == id;
     updateStatus(data.state, drawing, data.drawerName, data.currentWord);
     whiteboard.load(data.clicks);
   }).on('updateScore', (score) => {
+    console.log(score);
     updateScore(score);
   }).on('nextRound', (data) => {
     if (data) {
       updateScore(data.score);
-      const drawing = data.drawer == socket.id;
+      const drawing = data.drawer == id;
       whiteboard.setDrawable(drawing);
       updateStatus(IN_PROGRESS, drawing, data.drawerName, data.currentWord);
     }
