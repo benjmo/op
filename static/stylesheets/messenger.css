@@ -1,5 +1,5 @@
 .messenger {position: relative; overflow:hidden; border: 1px solid #000000}
-.messenger form { background: #000; width: 100%; }
+.messenger form { width: 100%; }
 .messenger ul { list-style-type: none; margin: 0; padding: 0; overflow:hidden}
 .messenger ul:hover { overflow-y:scroll; }
 .messenger ul li{ padding: 5px 10px; }

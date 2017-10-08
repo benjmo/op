@@ -102,7 +102,7 @@ $(document).ready(function () {
     }
     id = data.id;
     whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
-    messenger = $('.messenger').pictMessenger({socket: socket, height: 60});
+    messenger = $('.messenger').pictMessenger({socket: socket, height: 60, inputHeight:20});
   });
   if (error)
     return;
