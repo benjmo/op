@@ -1,0 +1,16 @@
+/* Canvas positioning */
+#myDrawing {
+  border: 1px solid #000000; 
+  position: fixed;
+  top: 220px;
+  left: 250px;
+  width: 70%;
+  height: auto;
+}
+
+/* Scoreboard positioning */
+#pictScore {
+  position: absolute;
+  right: 0;
+  width: 16%;
+}
