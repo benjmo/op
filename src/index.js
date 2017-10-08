@@ -45,12 +45,15 @@ io.on('connection', function (socket) {
   console.log('SID:' +socket.handshake.sessionID);
   let session = socket.handshake.session;
   let client = game.createClient(socket, session, socket.handshake.sessionID);
+  socket.emit('clientInfo',{room:session.room,
+    name:session.name,id:client.getID(),status:session.inGame});
+  //return if session is already in a game
+  if (session.inGame)
+    return;
   if (session.name)
     client.setName(session.name);
   if (session.room)
     client.reconnect(game.getRoom(session.room));
-  socket.emit('clientInfo',{room:session.room,
-    name:session.name,id:client.getID(),status:session.inGame});
   socket.on('nameMessage',(data) =>
     socket.emit('nameMessage',client.nameMessage(data)));
   socket.on('joinRoom', (data) =>
