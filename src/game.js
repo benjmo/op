@@ -277,7 +277,7 @@ const nextRound = function() {
   this.clicks = [];
   this.pointsEarned = {};
   this.pointsEarned[room.names[room.drawer]] = 0;
-  this.currentWord = wordlist.getRandomWord();
+  this.currentWord = wordlist.getRandomWord('Variety');
   this.hintsGiven = 0;
   io.to(this.id).emit('hint', "");
   io.to(this.id).emit('nextRound');
