@@ -1,4 +1,5 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const session = require("express-session")({
   secret: "helloworld",
   resave: true,
@@ -19,6 +20,8 @@ const room = require('./room');
 
 app.use(session);
 app.use(express.static('static'));
+app.use(bodyParser.urlencoded());
+app.use(bodyParser.json());
 app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
 
@@ -27,7 +30,11 @@ app.get('/room/settings', function(req, res) {
   room.getSettings(req, res);
 });
 app.get('/room/name', function(req, res) {
-  room.generateName(req, res);
+  room.getRandomName(req, res);
+});
+app.post('/room/create', function(req, res) {
+  game.createRoom(req.body.name, req.body.settings);
+  res.json({result: "Success"});
 });
 
 io.use(sharedsession(session, {

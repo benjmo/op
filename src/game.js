@@ -4,6 +4,7 @@
 
 const util = require('./util');
 const wordlist = require('./wordlist');
+const roomUtil = require('./room');
 const WIN_SCORE = 5;
 
 // base points for guessing correctly
@@ -439,14 +440,14 @@ const GAME_OVER = 5;
  * @param id socket.io Channel Name
  * @constructor
  */
-function Room(io,id) {
+function Room(io,id, settings) {
   rooms[id] = this;
   this.io = io;
-  this.id = id;
+  this.id = id || roomUtil.generateName();
   this.drawer = null;
   this.state = NOT_STARTED;
   this.currentWord = '';
-  this.wordTheme = 'Variety'; // hardcoded for now, will be used to select a theme when creating a game
+  this.wordTheme = wordlist.DEFAULT_THEME; // can be overridden by user settings
   this.users = [];
   this.score = {};
   this.names = {};
@@ -456,6 +457,8 @@ function Room(io,id) {
   this.hintsGiven = 0;
   this.roundTimerID;
   this.roundEndTime = 0;
+  // copy across user-defined settings
+  Object.assign(this, settings);
 }
 
 Room.prototype = {
@@ -480,11 +483,11 @@ module.exports = function (io) {
     createClient: function (socket,session,id) {
       return new Client(io,socket,session,id);
     },
-    createRoom: function (id) {
-      return new Room(io, id);
+    createRoom: function (id, settings) {
+      return new Room(io, id, settings);
     },
     getRoom: function (id) {
-      return rooms.hasOwnProperty(id) ? rooms[id] : this.createRoom(id);
+      return rooms.hasOwnProperty(id) ? rooms[id] : this.createRoom(id, {});
     }
   };
 };

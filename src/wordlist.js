@@ -3,6 +3,7 @@ const os = require('os');
 
 // Base directory where the wordlists are stored (as .txt files)
 const BASE_DIR = __dirname + '/wordlists/';
+const DEFAULT_THEME = 'Variety';
 
 /**
  * Returns a random word from the wordlist with the given theme.
@@ -33,5 +34,6 @@ const getThemes = function() {
 
 module.exports = {
   getRandomWord,
-  //getThemes // unused right now, will be used to select a theme when creating a game
+  getThemes,
+  DEFAULT_THEME
 };

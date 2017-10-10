@@ -1,12 +1,25 @@
 const wordlist = require('./wordlist');
 
 /**
- * Gets the available options for a game
+ * Gets all the possible values for settings for the game
+ * eg. all the possible themes to play with
  * @param {*} req 
  * @param {*} res 
  */
 const getSettings = function(req, res) {
-  res.json([]);
+  res.json({
+    wordTheme: {
+      values: wordlist.getThemes(),
+      default: wordlist.DEFAULT_THEME
+    },
+    name: {
+      default: generateName()
+    }
+  });
+}
+
+const getRandomName = function(req, res) {
+  res.send(generateName());
 }
 
 /**
@@ -15,15 +28,16 @@ const getSettings = function(req, res) {
  * @param {*} req 
  * @param {*} res 
  */
-const generateName = function(req, res) {
+const generateName = function() {
   let name = '';
   name += wordlist.getRandomWord('Adverbs');
   name += wordlist.getRandomWord('Adjectives');
   name += 'Room';
-  res.send(name);
+  return name;
 }
 
 module.exports = {
   getSettings,
+  getRandomName,
   generateName
 };
