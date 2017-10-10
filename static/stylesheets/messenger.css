@@ -1,5 +1,16 @@
-.messenger {position: relative; overflow:hidden; border: 1px solid #000000}
-.messenger form { width: 100%; }
+.messenger {
+  position: relative; 
+  overflow: hidden; 
+  border: 1px solid #000000;
+  margin: 0px;
+  padding: 0px;
+  padding-right: 0px;
+  padding-left: 0px;
+}
+
+.messenger form { 
+  width: 100%; 
+}
 
 
 .messenger ul { list-style-type: none; margin: 0; padding: 0; overflow:hidden}

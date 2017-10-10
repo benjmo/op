@@ -1,9 +1,16 @@
 /* Canvas positioning */
 #myDrawing {
   border: 1px solid #000000;
-  width: 100%;
-  height: auto;
-  margin-right: 150px;
-  min-width: 150px;
 }
 
+#no-padding {
+  padding: 0;
+}
+
+.title {
+  text-align: center;
+}
+
+#pictStatus {
+  padding: 10px;
+}
