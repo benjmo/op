@@ -3,11 +3,7 @@
   border: 1px solid #000000;
   width: 100%;
   height: auto;
+  margin-right: 150px;
+  min-width: 150px;
 }
 
-/*!* Scoreboard positioning *!*/
-/*#pictScore {*/
-  /*position: absolute;*/
-  /*right: 0;*/
-  /*width: 16%;*/
-/*}*/
