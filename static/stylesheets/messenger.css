@@ -1,17 +1,5 @@
-.messenger {
-  position: fixed; 
-  overflow: hidden; 
-  border: 1px solid #000000;
-  left: 0;
-  width: 13.5%;
-  height: 100%;
-}
-
-.messenger form {
-  width: 100%; 
-  position: absolute;
-  bottom: 0;
-}
+.messenger {position: relative; overflow:hidden; border: 1px solid #000000}
+.messenger form { width: 100%; }
 
 .messenger ul { list-style-type: none; margin: 0; padding: 0; overflow:hidden}
 .messenger ul:hover { overflow-y:scroll; }
