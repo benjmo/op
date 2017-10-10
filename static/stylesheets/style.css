@@ -6,11 +6,16 @@
   left: 250px;
   width: 70%;
   height: auto;
+  margin-right: 150px;
+  min-width: 150px;
 }
 
 /* Scoreboard positioning */
 #pictScore {
   position: absolute;
   right: 0;
+  top: 0;
   width: 16%;
+  min-width: 150px;
+  height: auto;
 }
