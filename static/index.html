@@ -2,49 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel='stylesheet' href='stylesheets/messenger.css'>
-    <link rel='stylesheet' href='stylesheets/style.css'>
+    <link rel='stylesheet' href='stylesheets/index.css'>
     <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
     <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
-    <script src='/socket.io/socket.io.js'></script>
-    <script src="js/drawing.js"></script>
-    <script src="js/messenger.js"></script>
-    <script src="js/name.js"></script>
-    <script src="js/pictionary.js"></script>
+    <script src="js/index.js"></script>
     <title>Online Pictionary</title>
 </head>
 <body>
     <div class="container">
         <div class="row">
-            <div class="col-sm-3">
-                <div class="messenger"></div>
+            <center><h1>Online Pictionary</h1></center>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
             </div>
-            <div class="col-sm-6">
-                <h1>Online Pictionary</h1>
-                <div class="row">
-                    <div class="col-sm-10">
-                        <p id="pictStatus"></p>
-                    </div>
-                    <div class="col-sm-2">
-                        <p id="roundTimer"></p>
-                    </div>
-                </div>
-                <div id="drawingTools"></div>
-                <canvas id="myDrawing" height="500" width="500">
-                    <p>Your browser doesn't support canvas</p>
-                </canvas>
-                <button class="btn btn-default" id="clear">Clear</button>
-                <button class="btn btn-default" id="skip">Skip</button>
-                <button class="btn btn-default" id="hint">Give Hint</button>
-                <p id="hintText"></p>
-            </div>
-            <table class="table" id="pictScore">
-                <thead><tr>
-                    <th>Name</th>
-                    <th>Score</th>
-                </tr></thead>
-                <tbody></tbody>
-            </table>
+            <button class="btn btn-default" id="start">New game</button>
         </div>
     </div>
 </body>
