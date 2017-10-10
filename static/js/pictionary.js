@@ -95,6 +95,7 @@ $(document).ready(function () {
         socket.emit('joinRoom', game);
       } else {
         alert('No Game entered');
+        window.location.replace('/');
         error = true;
         return;
       }

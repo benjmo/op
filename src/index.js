@@ -15,6 +15,7 @@ const ut = require('util');
 
 const io = require('socket.io')(http);
 const game = require('./game')(io);
+const room = require('./room');
 
 app.use(session);
 app.use(express.static('static'));
@@ -22,17 +23,11 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
 
 /* Routes all go here */
-app.get('/', function (req, res) {
-  res.render('index');
+app.get('/room/settings', function(req, res) {
+  room.getSettings(req, res);
 });
-app.get('/play/:id', function (req, res) {
-  res.render('index', {game: req.params.id, drawing: true});
-});
-app.get('/draw/', function (req, res) {
-  res.render('index', {drawing: true});
-});
-app.get('/message/', function (req, res) {
-  res.render('messages');
+app.get('/room/name', function(req, res) {
+  room.generateName(req, res);
 });
 
 io.use(sharedsession(session, {
