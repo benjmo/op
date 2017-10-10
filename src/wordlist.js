@@ -33,5 +33,5 @@ const getThemes = function() {
 
 module.exports = {
   getRandomWord,
-  //getThemes,
+  //getThemes // unused right now, will be used to select a theme when creating a game
 };

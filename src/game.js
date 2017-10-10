@@ -277,7 +277,7 @@ const nextRound = function() {
   this.clicks = [];
   this.pointsEarned = {};
   this.pointsEarned[room.names[room.drawer]] = 0;
-  this.currentWord = wordlist.getRandomWord('Variety');
+  this.currentWord = wordlist.getRandomWord(this.wordTheme);
   this.hintsGiven = 0;
   io.to(this.id).emit('hint', "");
   io.to(this.id).emit('nextRound');
@@ -446,6 +446,7 @@ function Room(io,id) {
   this.drawer = null;
   this.state = NOT_STARTED;
   this.currentWord = '';
+  this.wordTheme = 'Variety'; // hardcoded for now, will be used to select a theme when creating a game
   this.users = [];
   this.score = {};
   this.names = {};
