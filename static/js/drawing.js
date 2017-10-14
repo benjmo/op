@@ -6,7 +6,7 @@
     defaults = {
       colors:['black','gray','red','purple','green','yellow','blue','orange','fuchsia','lime','teal','aqua'],
       tools:['pencil','eraser','fill','line','rectangle','circle'],
-      sizes:[{name:'small',size:'5'},{name:'normal',size:'10'},{name:'large',size:'20'}],
+      sizes:[{name:'small',size:5},{name:'normal',size:10},{name:'large',size:20}],
     },
     shapes = ['rectangle','circle','line'];
 
@@ -87,7 +87,15 @@
 
     return rgb;
   }
-
+  function invertColor(color) {
+    let colorArr = getRgbArray(color);
+    let invArr = [];
+    colorArr.forEach((hex) => {
+      let inv = (255-hex).toString(16);
+      invArr.push("0".repeat(2-inv.length)+inv);
+    });
+    return '#'+invArr.join('');
+  }
   /*
    * Functions callable using object.pictWhiteboard().functionName()
    */
@@ -97,29 +105,40 @@
      */
     _init: function () {
       let canvas = this.element, context = canvas.getContext('2d'), plugin = this, socket = this.options.socket;
-      $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
+      canvas.width = canvas.getBoundingClientRect().width;
+      canvas.height = canvas.getBoundingClientRect().height;
+      // $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
+      let offsetLeft = canvas.getBoundingClientRect().left,
+        offsetTop = canvas.getBoundingClientRect().top;
+      // context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+      // context.fillStyle = 'white';
+      // context.fillRect(0,0,context.canvas.width,context.canvas.height);
       this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
       if (context) {
         let paint;
-        let offsetLeft = canvas.getBoundingClientRect().left, offsetTop = canvas.getBoundingClientRect().top; // relative to whole page
         let height = 0, width = 0;
         /*
          * Listeners for mouse events
          */
+        const resizeCanvas = function() {
+          canvas.width = canvas.getBoundingClientRect().width;
+          canvas.height = canvas.getBoundingClientRect().height;
+          offsetLeft = canvas.getBoundingClientRect().left;
+          offsetTop = canvas.getBoundingClientRect().top;
+          plugin.redraw();
+        };
+        let resizeTimeout;
+        $(window).resize(function() {
+          clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(resizeCanvas,100);
+        });
         $(canvas).mousedown(function (e) {
           if (!plugin.drawing)
             return;
 
-          $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
-          /*
-           * Calculates offset of canvas relative to whole page
-           * Check every mousedown in case of resize
-           */
-          let a = this;
-          let height = this.height, width = this.width;
-          let realH = $(this).height(), realW = $(this).width();
           offsetLeft = canvas.getBoundingClientRect().left;
           offsetTop = canvas.getBoundingClientRect().top;
+          let height = canvas.getBoundingClientRect().height, width = canvas.getBoundingClientRect().width;
           const mouseX = (e.pageX - offsetLeft) / width;
           const mouseY = (e.pageY - offsetTop) / height;
           console.log("MD X:" + mouseX + " Y:" + mouseY)
@@ -141,11 +160,13 @@
         }).mousemove(function (e) {
           if (!plugin.drawing)
             return;
+          offsetLeft = canvas.getBoundingClientRect().left;
+          offsetTop = canvas.getBoundingClientRect().top;
+          let height = canvas.getBoundingClientRect().height, width = canvas.getBoundingClientRect().width;
+          const mouseX = (e.pageX - offsetLeft) / width;
+          const mouseY = (e.pageY - offsetTop) / height;
           if (paint) {
-            let height = this.height, width = this.width;
-            const mouseX = (e.pageX - offsetLeft) / width;
-            const mouseY = (e.pageY - offsetTop) / height;
-            // console.log("MM X:" + mouseX + " Y:" + mouseY)
+            console.log("MM X:" + mouseX + " Y:" + mouseY)
             if (shapes.includes(plugin.drawingTool)) {
               socket.emit('draw', {
                 status: 'draw', startX: plugin.startX, startY: plugin.startY, x: mouseX, y: mouseY,
@@ -158,13 +179,56 @@
                 tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
               });
             }
+          } else {
+            //TODO: Implement cursors
+            context.lineJoin = 'round';
+            context.fillStyle = plugin.color;
+            context.lineWidth = plugin.width;
+            context.strokeStyle = plugin.color;
+            context.putImageData(plugin.imageData,0,0);
+            let width = canvas.width, height = canvas.height;
+            switch (plugin.drawingTool) {
+              case 'eraser':
+                context.lineWidth = plugin.width+1;
+                context.strokeStyle = "#000000";
+                context.beginPath();
+                context.moveTo(mouseX*width, mouseY*height);
+                context.lineTo(mouseX*width+1,mouseY*height);
+                context.closePath();
+                context.stroke();
+                context.lineWidth = plugin.width;
+                context.strokeStyle = "#FFFFFF";
+                context.beginPath();
+                context.moveTo(mouseX*width, mouseY*height);
+                context.lineTo(mouseX*width+1,mouseY*height);
+                context.closePath();
+                context.stroke();
+                break;
+              default:
+                context.lineWidth = plugin.width+1;
+                context.strokeStyle = invertColor(plugin.color);
+                context.beginPath();
+                context.moveTo(mouseX*width, mouseY*height);
+                context.lineTo(mouseX*width+1,mouseY*height);
+                context.closePath();
+                context.stroke();
+                context.lineWidth = plugin.width;
+                context.strokeStyle = plugin.color;
+                context.beginPath();
+                context.moveTo(mouseX*width, mouseY*height);
+                context.lineTo(mouseX*width+1,mouseY*height);
+                context.closePath();
+                context.stroke();
+                break;
+            }
           }
         }).mouseleave(function (e) {
           // console.log("ML")
+          context.putImageData(plugin.imageData,0,0);
           if (paint && shapes.includes(plugin.drawingTool)) {
-            let height = this.height, width = this.width;
-            const mouseX = (e.pageX - offsetLeft) / height;
-            const mouseY = (e.pageY - offsetTop) / width;
+            let height = canvas.getBoundingClientRect().height, width = canvas.getBoundingClientRect().width;
+            const mouseX = (e.pageX - offsetLeft) / width;
+            const mouseY = (e.pageY - offsetTop) / height;
             socket.emit('draw', {
               status: 'cancel',
               tool: plugin.drawingTool,
@@ -174,9 +238,9 @@
         }).mouseup(function (e) {
           // console.log("MU")
           if (paint && shapes.includes(plugin.drawingTool)) {
-            let height = this.height, width = this.width;
-            const mouseX = (e.pageX - offsetLeft) / height;
-            const mouseY = (e.pageY - offsetTop) / width;
+            let height = canvas.getBoundingClientRect().height, width = canvas.getBoundingClientRect().width;
+            const mouseX = (e.pageX - offsetLeft) / width;
+            const mouseY = (e.pageY - offsetTop) / height;
             socket.emit('draw', {
               status: 'end',
               tool: plugin.drawingTool,
@@ -264,7 +328,7 @@
      * Clears the canvas and redraws all recorded mouse movements
      */
     redraw: function () {
-      let context = this.element.getContext('2d');
+      let canvas = this.element, context = canvas.getContext('2d'), splice = false;
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
       context.fillStyle = 'white';
       context.fillRect(0,0,context.canvas.width,context.canvas.height);
@@ -335,8 +399,11 @@
         }
         if (shapes.includes(click.tool) && click.status != "end") {
           this.clicks.splice(i);
+          splice = true;
         }
       }
+      if (!splice)
+        this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
     },
 
     /*
@@ -383,7 +450,6 @@
       const canvas = this.element;
       let stack = [{x:Math.trunc(click.x*canvas.width),y:Math.trunc(click.y*canvas.height)}];
       let ctx = canvas.getContext("2d");
-      this.imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
       const isEqual = (a1,a2) => {
         if (a1.length == a2.length) {
           for (let i = 0; i < a1.length; i++) {
@@ -405,7 +471,7 @@
 
       const fillPix = (color, pixIdx) => {
         for (let i of [...Array(PIXEL_SIZE).keys()]) {
-            this.imageData.data[pixIdx+i] = color[i];
+          this.imageData.data[pixIdx+i] = color[i];
         }
       };
       let startColor = getPix(((stack[0].y * canvas.width) + stack[0].x)*PIXEL_SIZE);
