@@ -20,7 +20,8 @@
       });
     });
 
-    $('#customGameStart').click(() => {
+    $('#settingsForm').submit(function(event) {
+      event.preventDefault();
       const body = {
         name: $('#name').val(),
         settings: {
@@ -42,6 +43,6 @@
           alert('Error creating game, maybe try a new name?');
         }
       });
-    })
+    });
   });
 })(jQuery);
