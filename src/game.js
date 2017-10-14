@@ -222,7 +222,6 @@ const awardPoints = function(winner) {
   // drawer gets pointsEarned in a round
   const correctGuesses = Object.keys(this.pointsEarned).length - 1;
   const value = POINTS_GUESS - correctGuesses * POINTS_REDUCE - this.hintsGiven;
-  console.log('worth ' + value + ' points.');
   this.addScore(winner, value);
   this.addScore(this.drawer, POINTS_DRAW - this.hintsGiven);
   this.io.to(this.id).emit('updateScore', this.score);
@@ -264,7 +263,7 @@ const endRound = function() {
  */
 const nextRound = function() {
   let users = this.users, io = this.io, room = this;
-  console.log(users);
+  console.log('New round: ', users);
   this.clearRoundTimer();
   if (users.length <= 1) {
     this.state = WAITING;
@@ -290,7 +289,7 @@ const nextRound = function() {
       currentWord: room.currentWord,
       score: room.score
     });
-    room.setRoundTimer(ROUND_DURATION);
+    room.setRoundTimer(room.timeLimit);
     room.state = IN_PROGRESS;
   },5000);
 };

@@ -10,6 +10,13 @@
         themeInput.append('<option>' + theme + '</option>');
       }
       themeInput.val(body.wordTheme.default);
+
+      let timeInput = $('#timeLimit');
+      timeInput.empty();
+      for (const time of body.timeLimit.values) {
+        timeInput.append('<option value=' + time.value + '>' + time.display + '</option>');
+      }
+      timeInput.val(body.timeLimit.default);
     });
 
     $('#quickStart').click(() => {
@@ -25,7 +32,8 @@
       const body = {
         name: $('#name').val(),
         settings: {
-          wordTheme: $('#wordTheme').val()
+          wordTheme: $('#wordTheme').val(),
+          timeLimit: Number($('#timeLimit').val())
         }
       };
       console.log(body);
