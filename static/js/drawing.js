@@ -97,17 +97,11 @@
      */
     _init: function () {
       let canvas = this.element, context = canvas.getContext('2d'), plugin = this, socket = this.options.socket;
-      $(canvas).attr("width", $(canvas).outerWidth()).attr("height", canvas.width);
+      $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
       this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
       if (context) {
         let paint;
-        let a = this;
-        let offsetLeft = 0, offsetTop = 0; // relative to whole page
-        while (a) {
-          offsetLeft += a.offsetLeft;
-          offsetTop += a.offsetTop;
-          a = a.offsetParent;
-        }
+        let offsetLeft = canvas.getBoundingClientRect().left, offsetTop = canvas.getBoundingClientRect().top; // relative to whole page
         let height = 0, width = 0;
         /*
          * Listeners for mouse events
@@ -116,7 +110,7 @@
           if (!plugin.drawing)
             return;
 
-          //$(canvas).attr("width", $(canvas).outerWidth()).attr("height", canvas.width);
+          $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
           /*
            * Calculates offset of canvas relative to whole page
            * Check every mousedown in case of resize
@@ -124,17 +118,11 @@
           let a = this;
           let height = this.height, width = this.width;
           let realH = $(this).height(), realW = $(this).width();
-          offsetLeft = 0;
-          offsetTop = 0;
-          while (a) {
-            offsetLeft += a.offsetLeft;
-            offsetTop += a.offsetTop;
-            a = a.offsetParent;
-          }
-
-          const mouseX = (e.pageX - offsetLeft) / (realH);
-          const mouseY = (e.pageY - offsetTop) / (realW);
-          // console.log("MD X:" + mouseX + " Y:" + mouseY)
+          offsetLeft = canvas.getBoundingClientRect().left;
+          offsetTop = canvas.getBoundingClientRect().top;
+          const mouseX = (e.pageX - offsetLeft) / width;
+          const mouseY = (e.pageY - offsetTop) / height;
+          console.log("MD X:" + mouseX + " Y:" + mouseY)
           paint = true;
           if (shapes.includes(plugin.drawingTool)) {
             plugin.startX = mouseX;
@@ -155,8 +143,8 @@
             return;
           if (paint) {
             let height = this.height, width = this.width;
-            const mouseX = (e.pageX - offsetLeft) / height;
-            const mouseY = (e.pageY - offsetTop) / width;
+            const mouseX = (e.pageX - offsetLeft) / width;
+            const mouseY = (e.pageY - offsetTop) / height;
             // console.log("MM X:" + mouseX + " Y:" + mouseY)
             if (shapes.includes(plugin.drawingTool)) {
               socket.emit('draw', {
