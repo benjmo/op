@@ -26,6 +26,7 @@
     this.color = '#000000';
     this.width = 10;
     this.clicks = [];
+    this.tempClicks = [];
     this._init();
   }
 
@@ -132,6 +133,13 @@
           clearTimeout(resizeTimeout);
           resizeTimeout = setTimeout(resizeCanvas,100);
         });
+
+        const pushClick = (click) => {
+          this.tempClicks.push(click);
+          socket.emit('draw',click);
+          this.draw(click);
+        };
+
         $(canvas).mousedown(function (e) {
           if (!plugin.drawing)
             return;
@@ -146,13 +154,13 @@
           if (shapes.includes(plugin.drawingTool)) {
             plugin.startX = mouseX;
             plugin.startY = mouseY;
-            socket.emit('draw', {
+            pushClick({
               status: 'start', x: mouseX, y: mouseY,
               tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
               fill: plugin.isFilled,
-            })
+            });
           } else {
-            socket.emit('draw', {
+            pushClick({
               x: mouseX, y: mouseY, drag: false,
               tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
             });
@@ -168,13 +176,13 @@
           if (paint) {
             console.log("MM X:" + mouseX + " Y:" + mouseY)
             if (shapes.includes(plugin.drawingTool)) {
-              socket.emit('draw', {
+              pushClick({
                 status: 'draw', startX: plugin.startX, startY: plugin.startY, x: mouseX, y: mouseY,
                 tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
                 fill: plugin.isFilled,
-              })
+              });
             } else {
-              socket.emit('draw', {
+              pushClick({
                 x: mouseX, y: mouseY, drag: true,
                 tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
               });
@@ -229,7 +237,7 @@
             let height = canvas.getBoundingClientRect().height, width = canvas.getBoundingClientRect().width;
             const mouseX = (e.pageX - offsetLeft) / width;
             const mouseY = (e.pageY - offsetTop) / height;
-            socket.emit('draw', {
+            pushClick({
               status: 'cancel',
               tool: plugin.drawingTool,
             });
@@ -241,7 +249,7 @@
             let height = canvas.getBoundingClientRect().height, width = canvas.getBoundingClientRect().width;
             const mouseX = (e.pageX - offsetLeft) / width;
             const mouseY = (e.pageY - offsetTop) / height;
-            socket.emit('draw', {
+            pushClick({
               status: 'end',
               tool: plugin.drawingTool,
               startX: plugin.startX, startY: plugin.startY,
@@ -256,6 +264,13 @@
          * Listener for drawing-related actions from other users
          */
         socket.on('draw', (data) => {
+          if (!data) {
+            this.tempClicks = [];
+            return;
+          }
+          if (this.tempClicks.length > 0) {
+            let temp = this.tempClicks.shift();
+          }
           if (data.tool == 'fill') {
             console.log(data);
             this.fillCanvas(data);
@@ -402,10 +417,143 @@
           splice = true;
         }
       }
+      for (let i = 0; i < this.tempClicks.length; i++) {
+          let click = this.tempClicks[i], x = click.x * width, y = click.y * height;
+          let startX = click.startX * width, startY = click.startY * height;
+          context.lineWidth = click.width;
+          context.strokeStyle = click.color;
+          context.fillStyle = click.color;
+          switch (click.tool) {
+            case 'eraser':
+              context.strokeStyle = 'white';
+            case 'pencil':
+              context.beginPath();
+              if (click.drag && i) {
+                context.moveTo(this.clicks[i - 1].x * width, this.clicks[i - 1].y * height);
+              } else {
+                context.moveTo(x - 1, y);
+              }
+              context.lineTo(x,y);
+              context.closePath();
+              context.stroke();
+              break;
+            case 'fill':
+              context.putImageData(this.imageData,0,0);
+              break;
+            case 'line':
+              context.beginPath();
+              if (click.status == "start") {
+                context.moveTo(x - 1, y);
+              } else {
+                context.moveTo(startX, startY);
+              }
+              context.lineTo(x, y);
+              context.closePath();
+              context.stroke();
+              break;
+            case 'rectangle':
+              if (click.status == "cancel")
+                break;
+              if (click.status == "start") {
+                context.fillRect(startX, startY,1,1);
+              } else {
+                if (click.fill)
+                  context.fillRect(Math.min(startX,x),Math.min(startY,y),
+                    Math.abs(startX - x),Math.abs(startY - y));
+                else
+                  context.strokeRect(Math.min(startX,x),Math.min(startY,y),
+                    Math.abs(startX - x),Math.abs(startY - y));
+              }
+              break;
+            case 'circle':
+              console.log(click)
+              let radiusX = Math.abs(startX - x)/2, radiusY = Math.abs(startY - y)/2;
+              let centerX = (startX + x)/2, centerY = (startY + y)/2;
+              let steps = 100;
+              context.beginPath();
+              context.moveTo(radiusX * Math.cos(0) + centerX, radiusY * Math.sin(0) + centerY);
+              for (let i = 0; i < steps; i++) {
+                context.lineTo(radiusX * Math.cos(2*Math.PI*i/steps) + centerX, radiusY * Math.sin(2*Math.PI*i/steps) + centerY);
+              }
+              context.closePath();
+              context.stroke();
+              if (click.fill)
+                context.fill();
+          }
+          if (shapes.includes(click.tool) && click.status != "end") {
+            this.tempClicks.splice(i);
+            splice = true;
+          }
+      }
       if (!splice)
         this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
     },
 
+    /**
+     *
+     */
+    draw: function (click) {
+      let canvas = this.element, context = canvas.getContext('2d');
+      let height = this.element.height, width = this.element.width;
+      let x = click.x * width, y = click.y * height;
+      let startX = click.startX * width, startY = click.startY * height;
+      context.lineWidth = click.width;
+      context.strokeStyle = click.color;
+      context.fillStyle = click.color;
+      switch (click.tool) {
+        case 'eraser':
+          context.strokeStyle = 'white';
+        case 'pencil':
+          context.beginPath();
+          context.moveTo(x - 1, y);
+          context.lineTo(x,y);
+          context.closePath();
+          context.stroke();
+          break;
+        case 'fill':
+          context.putImageData(this.imageData,0,0);
+          break;
+        case 'line':
+          context.beginPath();
+          if (click.status == "start") {
+            context.moveTo(x - 1, y);
+          } else {
+            context.moveTo(startX, startY);
+          }
+          context.lineTo(x, y);
+          context.closePath();
+          context.stroke();
+          break;
+        case 'rectangle':
+          if (click.status == "cancel")
+            break;
+          if (click.status == "start") {
+            context.fillRect(startX, startY,1,1);
+          } else {
+            if (click.fill)
+              context.fillRect(Math.min(startX,x),Math.min(startY,y),
+                Math.abs(startX - x),Math.abs(startY - y));
+            else
+              context.strokeRect(Math.min(startX,x),Math.min(startY,y),
+                Math.abs(startX - x),Math.abs(startY - y));
+          }
+          break;
+        case 'circle':
+          console.log(click)
+          let radiusX = Math.abs(startX - x)/2, radiusY = Math.abs(startY - y)/2;
+          let centerX = (startX + x)/2, centerY = (startY + y)/2;
+          let steps = 100;
+          context.beginPath();
+          context.moveTo(radiusX * Math.cos(0) + centerX, radiusY * Math.sin(0) + centerY);
+          for (let i = 0; i < steps; i++) {
+            context.lineTo(radiusX * Math.cos(2*Math.PI*i/steps) + centerX, radiusY * Math.sin(2*Math.PI*i/steps) + centerY);
+          }
+          context.closePath();
+          context.stroke();
+          if (click.fill)
+            context.fill();
+      }
+    },
     /*
      * Clears the board locally
      */
@@ -413,6 +561,7 @@
       this.clicks = [];
       let context = this.element.getContext('2d');
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+      this.imageData = context.getImageData(0,0,context.canvas.width,context.canvas.height);
     },
 
     /*
