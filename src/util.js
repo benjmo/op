@@ -116,8 +116,8 @@ const giveHint = function (word, hintsGiven) {
 
   // Give additional letters randomly
   // E.g. "foo bar" -> "f _ _ b _ r"
-  if (hintsGiven >= 2 && word.length > 3) {
-    let numChars = Math.ceil(word.length / 6);
+  if (hintsGiven >= 2 && word.length > 2) {
+    let numChars = Math.ceil(word.length / 5);
     while (numChars > 0) {
       let i = Math.floor(Math.random() * word.length);
       while (hint[i] != '_') {

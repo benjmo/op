@@ -121,6 +121,10 @@ $(document).ready(function () {
     updateScore(score);
   }).on('nextRound', (data) => {
     if (data) {
+      // sound effect new round
+      let lowBell = new Audio("/sound/low_bell.mp3");
+      lowBell.play();
+
       updateScore(data.score);
       const drawing = data.drawer == id;
       whiteboard.setDrawable(drawing);
@@ -133,6 +137,7 @@ $(document).ready(function () {
   }).on('hint', (hint) => {
     updateHint(hint);
   });
+
   $('#clear').click(() => {
     socket.emit('clear');
   });

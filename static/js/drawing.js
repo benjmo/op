@@ -149,7 +149,7 @@
           let height = canvas.getBoundingClientRect().height, width = canvas.getBoundingClientRect().width;
           const mouseX = (e.pageX - offsetLeft) / width;
           const mouseY = (e.pageY - offsetTop) / height;
-          console.log("MD X:" + mouseX + " Y:" + mouseY)
+          // console.log("MD X:" + mouseX + " Y:" + mouseY)
           paint = true;
           if (shapes.includes(plugin.drawingTool)) {
             plugin.startX = mouseX;
@@ -174,7 +174,7 @@
           const mouseX = (e.pageX - offsetLeft) / width;
           const mouseY = (e.pageY - offsetTop) / height;
           if (paint) {
-            console.log("MM X:" + mouseX + " Y:" + mouseY)
+            // console.log("MM X:" + mouseX + " Y:" + mouseY)
             if (shapes.includes(plugin.drawingTool)) {
               pushClick({
                 status: 'draw', startX: plugin.startX, startY: plugin.startY, x: mouseX, y: mouseY,
