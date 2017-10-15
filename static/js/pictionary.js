@@ -8,6 +8,10 @@ const GAME_OVER = 5;
 // identifier for the round timer that decrements every second
 let roundTimerID;
 
+// ticking sound object, don't want to create new instance every time so it is in global
+let tickingSound = new Audio("/sound/ticking_cut.mp3");
+tickingSound.loop = true;
+
 const updateScore = (score) => {
   let scoreboard = $('#pictScore tbody').empty();
   for (key in score) {
@@ -60,9 +64,16 @@ const updateRoundTimer = (seconds) => {
     // set the round timer to decrement every second
     roundTimerID = setInterval(() => {
       seconds -= 1;
+
+      if (seconds <= 10 && tickingSound.paused) {
+        tickingSound.play();
+      }
+
       $("#roundTimer").text(new Date(seconds * 1000).toISOString().substr(14, 5));
       if (seconds === 0) {
         clearInterval(roundTimerID);
+        tickingSound.pause();
+        tickingSound.currentTime = 0;
       }
     }, 1000);
   }
@@ -83,6 +94,7 @@ $(document).ready(function () {
   let game = params.get("game");
   let whiteboard, messenger;
   let error = false;
+
   socket.on('clientInfo', (data) =>  {
     console.log(data);
     if (data.status) {
@@ -121,9 +133,11 @@ $(document).ready(function () {
     updateScore(score);
   }).on('nextRound', (data) => {
     if (data) {
-      // sound effect new round
-      let lowBell = new Audio("/sound/low_bell.mp3");
-      lowBell.play();
+      let newRoundSound = new Audio("/sound/low_bell.mp3");
+      newRoundSound.play();
+
+      tickingSound.pause();
+      tickingSound.currentTime = 0;
 
       updateScore(data.score);
       const drawing = data.drawer == id;
@@ -136,7 +150,13 @@ $(document).ready(function () {
     updateStatus(status);
   }).on('hint', (hint) => {
     updateHint(hint);
-  });
+  }).on('chatMessage', (msg) => {
+    let messageSound = new Audio("/sound/single_tap.mp3");
+    messageSound.play();
+  });//.on('skipDrawing', () => {
+  //   let skipSound = new Audio("/sound/high_ding.mp3");
+  //   skipSound.play();
+  // });
 
   $('#clear').click(() => {
     socket.emit('clear');
