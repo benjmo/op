@@ -5,7 +5,11 @@
     <link rel='stylesheet' href='stylesheets/messenger.css'>
     <link rel='stylesheet' href='stylesheets/style.css'>
     <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
     <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.js"></script>
     <script src='/socket.io/socket.io.js'></script>
     <script src="js/drawing.js"></script>
     <script src="js/messenger.js"></script>
@@ -31,13 +35,36 @@
                         <p id="roundTimer"></p>
                     </div>
                 </div>
-                <div id="drawingTools"></div>
+                <div id="drawingTools" class="pull-left">
+                    &nbsp;
+                    <button class="btn btn-default" id="colorPicker">&nbsp;&nbsp;&nbsp;</button>
+                    <button class="btn btn-default toolPicker" id="tool-pencil"><span class="glyphicon glyphicon-pencil"></span></button>
+                    <button class="btn btn-default toolPicker" id="tool-eraser"><span class="glyphicon glyphicon-erase"></span></button>
+                    <button class="btn btn-default toolPicker" id="tool-fill"><i class="fi-paint-bucket"></i></button>
+                    <button class="btn btn-default toolPicker" id="tool-line">&#8599;</button>
+                    <button class="btn btn-default toolPicker" id="tool-rectangle">&#9645;</button>
+                    <button class="btn btn-default toolPicker" id="tool-circle">&#9711;</button>
+                </div>
+                <div class="dropdown pull-left">
+                    &nbsp;
+                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Width: 5
+                        <span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">5</a></li>
+                        <li><a href="#">10</a></li>
+                        <li><a href="#">20</a></li>
+                        <li><center><input class="form-control" type="text" style="width:90%"/></center></li>
+                    </ul>
+                </div>
+                <div class="pull-right">
+                    <button class="btn btn-default" id="clear">Clear</button>
+                    <button class="btn btn-default" id="skip">Skip</button>
+                    <button class="btn btn-default" id="hint">Give Hint</button>
+                    &nbsp;
+                </div>
                 <canvas id="myDrawing" width="800" height="500">
                     <p>Your browser doesn't support canvas</p>
                 </canvas>
-                <button class="btn btn-default" id="clear">Clear</button>
-                <button class="btn btn-default" id="skip">Skip</button>
-                <button class="btn btn-default" id="hint">Give Hint</button>
                 <p id="hintText"></p>
             </div>
             <div class="col-xs-2 no-padding" id="scoreSettingsCol">
