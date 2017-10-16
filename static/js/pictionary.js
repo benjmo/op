@@ -94,7 +94,19 @@ $(document).ready(function () {
   let game = params.get("game");
   let whiteboard, messenger;
   let error = false;
-
+  let navbarHeight = 0;
+  let scoreCol = document.getElementById("scoreSettingsCol");
+  let scoreboardHeight = 2/5;
+  const resizeUI = () => {
+    $('#scoreSettingsCol').height($(window).height() - navbarHeight-(scoreCol.offsetHeight-scoreCol.clientHeight));
+    $('#pictScore').height($('#scoreSettingsCol').height()*scoreboardHeight);
+  };
+  resizeUI();
+  let resizeTimer;
+  $(window).resize(() => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resizeUI,500);
+  });
   socket.on('clientInfo', (data) =>  {
     console.log(data);
     if (data.status) {

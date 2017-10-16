@@ -7,7 +7,8 @@
 
   $.fn.pictMessenger = function (options) {
     let opts = $.extend({}, $.fn.pictMessenger.defaults, options);
-    return this.each(() => {
+    let that = this;
+    return this.each(function() {
       let inputForm = $('<form>').height($(window).height() * opts.height /100 * opts.inputHeight / 100).addClass('input-group').append(
         $('<input>').height('100%').addClass('form-control')).append(
           $('<div>').width('1%').addClass('input-group-btn').append(
@@ -15,8 +16,9 @@
               $('<i>').addClass('glyphicon glyphicon-search')
             )));
       let messageDiv = $('<ul>');
-      this.append(messageDiv).append(inputForm);
-      messageDiv.height($(window).height() * opts.height / 100 - inputForm.height());
+      that.append(messageDiv).append(inputForm);
+      console.log($(window).height() * opts.height / 100 - inputForm.height()-(this.offsetHeight-this.clientHeight));
+      messageDiv.height($(window).height() * opts.height / 100 - inputForm.height()-(this.offsetHeight-this.clientHeight));
       let printerH = messageDiv.innerHeight(),
         preventNewScroll = false;
       let scrollBottom = () => {
@@ -24,6 +26,18 @@
           messageDiv.stop().animate({scrollTop: messageDiv[0].scrollHeight - printerH}, 250); // SET SCROLLER TO BOTTOM
         }
       };
+
+
+      const resizeUI = () => {
+        messageDiv.height($(window).height() * opts.height / 100 - inputForm.height()-(this.offsetHeight-this.clientHeight));
+        inputForm.height($(window).height() * opts.height /100 * opts.inputHeight / 100);
+      };
+      resizeUI();
+      let resizeTimer;
+      $(window).resize(() => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resizeUI,500);
+      });
 
       messageDiv.hover(function (e) {
         preventNewScroll = e.type == 'mouseenter' ? true : false;
