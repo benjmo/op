@@ -26,6 +26,7 @@
     this.color = '#000000';
     this.width = 10;
     this.clicks = [];
+    this.prevClick = null;
     this.tempClicks = [];
     this._init();
   }
@@ -122,15 +123,15 @@
          * Listeners for mouse events
          */
         const resizeCanvas = function() {
-          canvas.width = canvas.getBoundingClientRect().width;
-          canvas.height = canvas.getBoundingClientRect().height;
-          offsetLeft = canvas.getBoundingClientRect().left;
-          offsetTop = canvas.getBoundingClientRect().top;
           plugin.redraw();
         };
         let resizeTimeout;
         $(window).resize(function() {
           clearTimeout(resizeTimeout);
+          canvas.width = canvas.getBoundingClientRect().width;
+          canvas.height = canvas.getBoundingClientRect().height;
+          offsetLeft = canvas.getBoundingClientRect().left;
+          offsetTop = canvas.getBoundingClientRect().top;
           resizeTimeout = setTimeout(resizeCanvas,100);
         });
 
@@ -159,6 +160,13 @@
               tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
               fill: plugin.isFilled,
             });
+          } else if (plugin.drawingTool == 'fill') {
+            let click = {
+              x: mouseX, y: mouseY, drag: false,
+              tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
+            };
+            pushClick(click);
+            plugin.fillCanvas(click);
           } else {
             pushClick({
               x: mouseX, y: mouseY, drag: false,
@@ -270,13 +278,13 @@
           }
           if (this.tempClicks.length > 0) {
             let temp = this.tempClicks.shift();
-          }
-          if (data.tool == 'fill') {
-            console.log(data);
-            this.fillCanvas(data);
+          } else {
+            if (data.tool == 'fill') {
+              this.fillCanvas(data);
+            }
+            plugin.draw(data);
           }
           plugin.addClick(data);
-          plugin.redraw();
         }).on('clear', (data) => {
           // Drawing cleared by drawer, so we have to clear our board locally
           plugin.clear();
@@ -300,10 +308,29 @@
           }
         });
       }
-      let colorPicker = $('<div>');
-      for (let color of this.options.colors) {
-        colorPicker.append($('<button>').addClass('btn colorPicker').css('background-color',color));
-      }
+      let colorPicker = $("#colorPicker").css('background-color',plugin.color);
+      colorPicker.spectrum({
+        showPaletteOnly: true,
+        hideAfterPaletteSelect: true,
+        togglePaletteOnly: true,
+        togglePaletteMoreText: 'more',
+        togglePaletteLessText: 'less',
+        color: 'black',
+        palette: [
+          ["#000","#444","#666","#999","#ccc","#eee","#f3f3f3","#fff"],
+          ["#f00","#f90","#ff0","#0f0","#0ff","#00f","#90f","#f0f"],
+          ["#f4cccc","#fce5cd","#fff2cc","#d9ead3","#d0e0e3","#cfe2f3","#d9d2e9","#ead1dc"],
+          ["#ea9999","#f9cb9c","#ffe599","#b6d7a8","#a2c4c9","#9fc5e8","#b4a7d6","#d5a6bd"],
+          ["#e06666","#f6b26b","#ffd966","#93c47d","#76a5af","#6fa8dc","#8e7cc3","#c27ba0"],
+          ["#c00","#e69138","#f1c232","#6aa84f","#45818e","#3d85c6","#674ea7","#a64d79"],
+          ["#900","#b45f06","#bf9000","#38761d","#134f5c","#0b5394","#351c75","#741b47"],
+          ["#600","#783f04","#7f6000","#274e13","#0c343d","#073763","#20124d","#4c1130"]
+        ],
+        change: (color) => {
+          colorPicker.css('background-color',color.toHexString());
+          plugin.setColor(color.toHexString());
+        }
+      });
       let toolPicker = $('<div>');
       for (let tool of this.options.tools) {
         toolPicker.append($('<button>').addClass('btn toolPicker').text(tool));
@@ -320,16 +347,19 @@
       toolPicker.append($('<label>').append($('<input type="checkbox">').click(function() {
         plugin.isFilled = this.checked;
       })).append(" Fill Shape"));
-      $(document).on('click','.colorPicker', function() {
-        plugin.setColor($(this).css('background-color'));
-        $(this).parent().find('.active').removeClass('active');
-        $(this).addClass('active');
-      }).on('click','.toolPicker', function() {
-        plugin.setTool($(this).text());
-        $(this).parent().find('.active').removeClass('active');
+      $(document).
+      // on('click','.colorPicker', function() {
+      //   plugin.setColor($(this).css('background-color'));
+      //   $(this).parent().find('.active').removeClass('active');
+      //   $(this).addClass('active');
+      // }).
+      on('click','.toolPicker', function() {
+        let tool = $(this).attr("id").substr("tool_".length);
+        plugin.setTool(tool);
+        $(this).parent().find('.active.toolPicker').removeClass('active');
         $(this).addClass('active');
       });
-      $('#drawingTools').append(colorPicker).append(toolPicker).append(sizePicker);
+      // $('#drawingTools').append(toolPicker).append(sizePicker);
     },
 
     /*
@@ -348,9 +378,12 @@
       context.fillStyle = 'white';
       context.fillRect(0,0,context.canvas.width,context.canvas.height);
       context.lineJoin = "round";
-      let height = this.element.height, width = this.element.width;
+      let width = canvas.getBoundingClientRect().width;
+      let height = canvas.getBoundingClientRect().height;
       for (let i = 0; i < this.clicks.length; i++) {
         let click = this.clicks[i], x = click.x * width, y = click.y * height;
+        if (click.status != 'end' && click.status != null)
+          continue;
         let startX = click.startX * width, startY = click.startY * height;
         context.lineWidth = click.width;
         context.strokeStyle = click.color;
@@ -370,32 +403,22 @@
             context.stroke();
             break;
           case 'fill':
-            context.putImageData(this.imageData,0,0);
+            this.fillCanvas(click);
             break;
           case 'line':
             context.beginPath();
-            if (click.status == "start") {
-              context.moveTo(x - 1, y);
-            } else {
-              context.moveTo(startX, startY);
-            }
+            context.moveTo(startX, startY);
             context.lineTo(x, y);
             context.closePath();
             context.stroke();
             break;
           case 'rectangle':
-            if (click.status == "cancel")
-              break;
-            if (click.status == "start") {
-              context.fillRect(startX, startY,1,1);
-            } else {
-              if (click.fill)
-                context.fillRect(Math.min(startX,x),Math.min(startY,y),
-                  Math.abs(startX - x),Math.abs(startY - y));
-              else
-                context.strokeRect(Math.min(startX,x),Math.min(startY,y),
-                  Math.abs(startX - x),Math.abs(startY - y));
-            }
+            if (click.fill)
+              context.fillRect(Math.min(startX,x),Math.min(startY,y),
+                Math.abs(startX - x),Math.abs(startY - y));
+            else
+              context.strokeRect(Math.min(startX,x),Math.min(startY,y),
+                Math.abs(startX - x),Math.abs(startY - y));
             break;
           case 'circle':
             console.log(click)
@@ -411,10 +434,6 @@
             context.stroke();
             if (click.fill)
               context.fill();
-        }
-        if (shapes.includes(click.tool) && click.status != "end") {
-          this.clicks.splice(i);
-          splice = true;
         }
       }
       for (let i = 0; i < this.tempClicks.length; i++) {
@@ -438,32 +457,22 @@
               context.stroke();
               break;
             case 'fill':
-              context.putImageData(this.imageData,0,0);
+              //context.putImageData(this.imageData,0,0);
               break;
             case 'line':
               context.beginPath();
-              if (click.status == "start") {
-                context.moveTo(x - 1, y);
-              } else {
-                context.moveTo(startX, startY);
-              }
+              context.moveTo(startX, startY);
               context.lineTo(x, y);
               context.closePath();
               context.stroke();
               break;
             case 'rectangle':
-              if (click.status == "cancel")
-                break;
-              if (click.status == "start") {
-                context.fillRect(startX, startY,1,1);
-              } else {
-                if (click.fill)
-                  context.fillRect(Math.min(startX,x),Math.min(startY,y),
-                    Math.abs(startX - x),Math.abs(startY - y));
-                else
-                  context.strokeRect(Math.min(startX,x),Math.min(startY,y),
-                    Math.abs(startX - x),Math.abs(startY - y));
-              }
+              if (click.fill)
+                context.fillRect(Math.min(startX,x),Math.min(startY,y),
+                  Math.abs(startX - x),Math.abs(startY - y));
+              else
+                context.strokeRect(Math.min(startX,x),Math.min(startY,y),
+                  Math.abs(startX - x),Math.abs(startY - y));
               break;
             case 'circle':
               console.log(click)
@@ -480,13 +489,8 @@
               if (click.fill)
                 context.fill();
           }
-          if (shapes.includes(click.tool) && click.status != "end") {
-            this.tempClicks.splice(i);
-            splice = true;
-          }
       }
-      if (!splice)
-        this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
+      this.imageData = context.getImageData(0,0,width,height);
     },
 
     /**
@@ -494,9 +498,16 @@
      */
     draw: function (click) {
       let canvas = this.element, context = canvas.getContext('2d');
-      let height = this.element.height, width = this.element.width;
+      let width = canvas.getBoundingClientRect().width;
+      let height = canvas.getBoundingClientRect().height;
       let x = click.x * width, y = click.y * height;
       let startX = click.startX * width, startY = click.startY * height;
+      //clearTimeout(this.imageDataTimer);
+      console.log(click);
+      if (!click.status || click.status != 'end') {
+        context.putImageData(this.imageData,0,0);
+      }
+      context.lineJoin = "round";
       context.lineWidth = click.width;
       context.strokeStyle = click.color;
       context.fillStyle = click.color;
@@ -505,7 +516,10 @@
           context.strokeStyle = 'white';
         case 'pencil':
           context.beginPath();
-          context.moveTo(x - 1, y);
+          if (click.drag)
+            context.moveTo(this.prevClick.x*width,this.prevClick.y*height);
+          else
+            context.moveTo(x - 1, y);
           context.lineTo(x,y);
           context.closePath();
           context.stroke();
@@ -553,6 +567,12 @@
           if (click.fill)
             context.fill();
       }
+      //this.imageDataTimer = setTimeout(()=>{
+      if (click.status == 'end' || click.status == null) {
+        this.prevClick = click;
+        this.imageData = context.getImageData(0,0,context.canvas.width,context.canvas.height);
+      }
+      //},25);
     },
     /*
      * Clears the board locally
