@@ -26,6 +26,7 @@
     this.color = '#000000';
     this.width = 10;
     this.clicks = [];
+    this.prevClick = null;
     this.tempClicks = [];
     this._init();
   }
@@ -122,15 +123,15 @@
          * Listeners for mouse events
          */
         const resizeCanvas = function() {
-          canvas.width = canvas.getBoundingClientRect().width;
-          canvas.height = canvas.getBoundingClientRect().height;
-          offsetLeft = canvas.getBoundingClientRect().left;
-          offsetTop = canvas.getBoundingClientRect().top;
           plugin.redraw();
         };
         let resizeTimeout;
         $(window).resize(function() {
           clearTimeout(resizeTimeout);
+          canvas.width = canvas.getBoundingClientRect().width;
+          canvas.height = canvas.getBoundingClientRect().height;
+          offsetLeft = canvas.getBoundingClientRect().left;
+          offsetTop = canvas.getBoundingClientRect().top;
           resizeTimeout = setTimeout(resizeCanvas,100);
         });
 
@@ -159,6 +160,13 @@
               tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
               fill: plugin.isFilled,
             });
+          } else if (plugin.drawingTool == 'fill') {
+            let click = {
+              x: mouseX, y: mouseY, drag: false,
+              tool: plugin.drawingTool, color: plugin.color, width: plugin.width,
+            };
+            pushClick(click);
+            plugin.fillCanvas(click);
           } else {
             pushClick({
               x: mouseX, y: mouseY, drag: false,
@@ -270,13 +278,13 @@
           }
           if (this.tempClicks.length > 0) {
             let temp = this.tempClicks.shift();
-          }
-          if (data.tool == 'fill') {
-            console.log(data);
-            this.fillCanvas(data);
+          } else {
+            if (data.tool == 'fill') {
+              this.fillCanvas(data);
+            }
+            plugin.draw(data);
           }
           plugin.addClick(data);
-          plugin.redraw();
         }).on('clear', (data) => {
           // Drawing cleared by drawer, so we have to clear our board locally
           plugin.clear();
@@ -348,9 +356,12 @@
       context.fillStyle = 'white';
       context.fillRect(0,0,context.canvas.width,context.canvas.height);
       context.lineJoin = "round";
-      let height = this.element.height, width = this.element.width;
+      let width = canvas.getBoundingClientRect().width;
+      let height = canvas.getBoundingClientRect().height;
       for (let i = 0; i < this.clicks.length; i++) {
         let click = this.clicks[i], x = click.x * width, y = click.y * height;
+        if (click.status != 'end' && click.status != null)
+          continue;
         let startX = click.startX * width, startY = click.startY * height;
         context.lineWidth = click.width;
         context.strokeStyle = click.color;
@@ -370,32 +381,22 @@
             context.stroke();
             break;
           case 'fill':
-            context.putImageData(this.imageData,0,0);
+            this.fillCanvas(click);
             break;
           case 'line':
             context.beginPath();
-            if (click.status == "start") {
-              context.moveTo(x - 1, y);
-            } else {
-              context.moveTo(startX, startY);
-            }
+            context.moveTo(startX, startY);
             context.lineTo(x, y);
             context.closePath();
             context.stroke();
             break;
           case 'rectangle':
-            if (click.status == "cancel")
-              break;
-            if (click.status == "start") {
-              context.fillRect(startX, startY,1,1);
-            } else {
-              if (click.fill)
-                context.fillRect(Math.min(startX,x),Math.min(startY,y),
-                  Math.abs(startX - x),Math.abs(startY - y));
-              else
-                context.strokeRect(Math.min(startX,x),Math.min(startY,y),
-                  Math.abs(startX - x),Math.abs(startY - y));
-            }
+            if (click.fill)
+              context.fillRect(Math.min(startX,x),Math.min(startY,y),
+                Math.abs(startX - x),Math.abs(startY - y));
+            else
+              context.strokeRect(Math.min(startX,x),Math.min(startY,y),
+                Math.abs(startX - x),Math.abs(startY - y));
             break;
           case 'circle':
             console.log(click)
@@ -411,10 +412,6 @@
             context.stroke();
             if (click.fill)
               context.fill();
-        }
-        if (shapes.includes(click.tool) && click.status != "end") {
-          this.clicks.splice(i);
-          splice = true;
         }
       }
       for (let i = 0; i < this.tempClicks.length; i++) {
@@ -438,32 +435,22 @@
               context.stroke();
               break;
             case 'fill':
-              context.putImageData(this.imageData,0,0);
+              //context.putImageData(this.imageData,0,0);
               break;
             case 'line':
               context.beginPath();
-              if (click.status == "start") {
-                context.moveTo(x - 1, y);
-              } else {
-                context.moveTo(startX, startY);
-              }
+              context.moveTo(startX, startY);
               context.lineTo(x, y);
               context.closePath();
               context.stroke();
               break;
             case 'rectangle':
-              if (click.status == "cancel")
-                break;
-              if (click.status == "start") {
-                context.fillRect(startX, startY,1,1);
-              } else {
-                if (click.fill)
-                  context.fillRect(Math.min(startX,x),Math.min(startY,y),
-                    Math.abs(startX - x),Math.abs(startY - y));
-                else
-                  context.strokeRect(Math.min(startX,x),Math.min(startY,y),
-                    Math.abs(startX - x),Math.abs(startY - y));
-              }
+              if (click.fill)
+                context.fillRect(Math.min(startX,x),Math.min(startY,y),
+                  Math.abs(startX - x),Math.abs(startY - y));
+              else
+                context.strokeRect(Math.min(startX,x),Math.min(startY,y),
+                  Math.abs(startX - x),Math.abs(startY - y));
               break;
             case 'circle':
               console.log(click)
@@ -480,13 +467,8 @@
               if (click.fill)
                 context.fill();
           }
-          if (shapes.includes(click.tool) && click.status != "end") {
-            this.tempClicks.splice(i);
-            splice = true;
-          }
       }
-      if (!splice)
-        this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
+      this.imageData = context.getImageData(0,0,width,height);
     },
 
     /**
@@ -497,6 +479,11 @@
       let height = this.element.height, width = this.element.width;
       let x = click.x * width, y = click.y * height;
       let startX = click.startX * width, startY = click.startY * height;
+      //clearTimeout(this.imageDataTimer);
+      if (click.status != 'end' && click.status != null) {
+        context.putImageData(this.imageData,0,0);
+      }
+      context.lineJoin = "round";
       context.lineWidth = click.width;
       context.strokeStyle = click.color;
       context.fillStyle = click.color;
@@ -505,7 +492,10 @@
           context.strokeStyle = 'white';
         case 'pencil':
           context.beginPath();
-          context.moveTo(x - 1, y);
+          if (click.drag)
+            context.moveTo(this.prevClick.x*width,this.prevClick.y*height);
+          else
+            context.moveTo(x - 1, y);
           context.lineTo(x,y);
           context.closePath();
           context.stroke();
@@ -553,6 +543,13 @@
           if (click.fill)
             context.fill();
       }
+      console.log(click);
+      //this.imageDataTimer = setTimeout(()=>{
+      if (click.status == 'end' || click.status == null) {
+        this.prevClick = click;
+        this.imageData = context.getImageData(0,0,context.canvas.width,context.canvas.height);
+      }
+      //},25);
     },
     /*
      * Clears the board locally
