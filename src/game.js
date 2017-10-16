@@ -106,6 +106,10 @@ const chatMessage = function (data) {
   let socket = this.socket, io = this.io, room = this.room;
   // if the sender can guess (not drawer and hasn't successfully guessed)
   let isGuessing = room.currentDrawer() !== this.getID() && !room.pointsEarned[this.name];
+  if (room.hasTeams) {
+    // guesser also has to be on the same team as the drawer
+    isGuessing = isGuessing && room.getUserTeam(room.currentDrawer()) === room.getUserTeam(this.getID());
+  }
   // if the guess is correct or close)
   let isCorrect = room.currentWord != "" && util.checkGuess(room.currentWord, data);
   if (isCorrect === util.CORRECT_GUESS) {
@@ -113,7 +117,7 @@ const chatMessage = function (data) {
       // player correctly guessed
       socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); // to everyone else
       socket.emit('chatMessage', `You guessed the word: ${room.currentWord}!`); // to self
-      this.room.awardPoints(this.getID());
+      room.awardPoints(this.getID());
     } else {
       socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
@@ -224,7 +228,7 @@ const awardPoints = function(winner) {
   const value = POINTS_GUESS - correctGuesses * POINTS_REDUCE - this.hintsGiven;
   this.addScore(winner, value);
   this.addScore(this.drawer, POINTS_DRAW - this.hintsGiven);
-  this.io.to(this.id).emit('updateScore', this.score);
+  this.io.to(this.id).emit('updateScore', {teams: this.teams, score: this.score});
   this.pointsEarned[this.names[winner]] = value;
   this.pointsEarned[this.names[this.drawer]] += (4 - this.hintsGiven);
 
@@ -265,15 +269,23 @@ const nextRound = function() {
   let users = this.users, io = this.io, room = this;
   console.log('New round: ', users);
   this.clearRoundTimer();
-  if (users.length <= 1) {
+  if (!this.enoughPlayers()) {
     this.state = WAITING;
     this.io.to(this.id).emit('status',WAITING);
     return;
   }
-  if (this.drawer == null)
+  if (this.drawer == null) {
     this.drawer = users[0];
-  else
-    this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
+  } else {
+    if (this.hasTeams && this.useTeamScoring) {
+      // consecutive drawers must be from different teams
+      // TODO: don't make it random
+      const newTeam = this.getUserTeam(this.drawer) % this.numTeams + 1; // + 1 after mod becase teams are 1 indexed
+      this.drawer = this.teams[newTeam][Math.floor(Math.random(this.teams[newteam].length))];
+    } else {
+      this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
+    }
+  }
   this.clicks = [];
   this.pointsEarned = {};
   this.pointsEarned[room.names[room.drawer]] = 0;
@@ -287,6 +299,7 @@ const nextRound = function() {
       drawer: room.drawer,
       drawerName: room.names[room.drawer],
       currentWord: room.currentWord,
+      teams: room.teams,
       score: room.score
     });
     room.setRoundTimer(room.timeLimit);
@@ -341,11 +354,40 @@ const addUser = function(user, name) {
   this.users.push(user);
   this.names[user] = name;
   this.score[name] = 0;
-  this.io.to(this.id).emit('updateScore',this.score);
-  if (this.state == NOT_STARTED || this.state == WAITING) {
+
+  // if game is playing with teams, assign a team for user
+  if (this.hasTeams) {
+    const team1 = this.teams[1].length;
+    const team2 = this.teams[2].length;
+    const newTeam = (team1 <= team2) ? 1 : 2;
+    this.teams[newTeam].push(user);
+  }
+
+  this.io.to(this.id).emit('updateScore',{teams: this.teams, score: this.score});
+  if (this.enoughPlayers() && (this.state == NOT_STARTED || this.state == WAITING)) {
     this.nextRound();
   }
 };
+
+const getUserTeam = function(user) {
+  for (let i = 1; i <= this.numTeams; i++) {
+    if (this.teams[i].indexOf(user) !== -1)
+      return i;    
+  }
+  return 0;
+}
+
+const enoughPlayers = function() {
+  if (this.hasTeams) {
+    for (let i = 1; i <= this.numTeams; i++) {
+      if (this.teams[i].length < 2)
+        return false;
+    }
+    return true;
+  } else {
+    return this.users.length >= this.minPlayers;
+  }
+}
 
 /**
  * Remove a user's information from the game
@@ -360,21 +402,26 @@ const disconnectUser = function(user,session) {
   setTimeout(() => {
     if (this.timeOut[user]) {
       this.users.splice(this.users.indexOf(user),1);
+      if (this.hasTeams) {
+        const team = this.getUserTeam(user);
+        if (team)
+          this.teams[team].splice(this.teams[team].indexOf(user), 1);
+      }
       delete this.score[this.names[user]];
       delete this.names[user];
       session.destroy();
-      if (user == this.drawer || this.users.length <= 1) {
+      if (user == this.drawer || !this.enoughPlayers()) {
         this.nextRound();
         this.clearClicks();
       }
-      this.io.to(this.id).emit('updateScore',this.score);
+      this.io.to(this.id).emit('updateScore',{teams: this.teams, score: this.score});
     }
   }, TIME_OUT);
 };
 
 const reconnectUser = function (user) {
   this.timeOut[user] = false;
-  this.io.to(this.id).emit('updateScore',this.score);
+  this.io.to(this.id).emit('updateScore',{teams: this.teams, score: this.score});
 };
 
 /**
@@ -388,6 +435,7 @@ const getState = function () {
     drawerName: this.names[this.drawer],
     currentWord: this.currentWord,
     score: this.score,
+    teams: this.teams,
     clicks: this.clicks,
     seconds: Math.round((this.roundEndTime - Date.now()) / 1000) // seconds left in the round
   };
@@ -456,8 +504,17 @@ function Room(io,id, settings) {
   this.hintsGiven = 0;
   this.roundTimerID;
   this.roundEndTime = 0;
+  this.minPlayers = 2;
   // copy across user-defined settings
+  console.log(settings);
   Object.assign(this, settings);
+  if (this.hasTeams) {
+    this.numTeams = 2;
+    this.teams = {
+      1: [], 
+      2: []
+    };
+  }
 }
 
 Room.prototype = {
@@ -469,6 +526,8 @@ Room.prototype = {
   addUser,
   disconnectUser,
   reconnectUser,
+  enoughPlayers,
+  getUserTeam,
   getState,
   awardPoints,
   addScore,

@@ -33,7 +33,8 @@
         name: $('#name').val(),
         settings: {
           wordTheme: $('#wordTheme').val(),
-          timeLimit: Number($('#timeLimit').val())
+          timeLimit: Number($('#timeLimit').val()),
+          hasTeams: $('#hasTeams').is(':checked')
         }
       };
       console.log(body);
