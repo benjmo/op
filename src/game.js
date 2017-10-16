@@ -360,7 +360,7 @@ const addUser = function(user, name) {
     const team1 = this.teams[1].length;
     const team2 = this.teams[2].length;
     const newTeam = (team1 <= team2) ? 1 : 2;
-    this.teams[newTeam].push(user);
+    this.teams[newTeam].push(name);
   }
 
   this.io.to(this.id).emit('updateScore',{teams: this.teams, score: this.score});
@@ -370,9 +370,13 @@ const addUser = function(user, name) {
 };
 
 const getUserTeam = function(user) {
+  // if not name, convert to name
+  if (this.users.indexOf(user) !== -1) {
+    user = this.names[user];
+  }
   for (let i = 1; i <= this.numTeams; i++) {
     if (this.teams[i].indexOf(user) !== -1)
-      return i;    
+      return i;
   }
   return 0;
 }
