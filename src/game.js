@@ -509,6 +509,9 @@ function Room(io,id, settings) {
   this.roundTimerID;
   this.roundEndTime = 0;
   this.minPlayers = 2;
+  this.timeLimit = 60;
+  this.hasTeams = false;
+  this.teams = null;
   // copy across user-defined settings
   console.log(settings);
   Object.assign(this, settings);
