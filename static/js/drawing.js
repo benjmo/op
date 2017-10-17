@@ -23,7 +23,7 @@
     this.drawing = true;
     this.drawingTool = 'pencil';
     this.isFilled = false;
-    this.color = '#000000';
+    this.color = '#000';
     this.width = 10;
     this.clicks = [];
     this.prevClick = null;
@@ -113,9 +113,9 @@
       // $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
       let offsetLeft = canvas.getBoundingClientRect().left,
         offsetTop = canvas.getBoundingClientRect().top;
-      // context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
-      // context.fillStyle = 'white';
-      // context.fillRect(0,0,context.canvas.width,context.canvas.height);
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+      context.fillStyle = 'white';
+      context.fillRect(0,0,context.canvas.width,context.canvas.height);
       this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
       if (context) {
         let paint;
@@ -583,6 +583,8 @@
       this.tempClicks = [];
       let context = this.element.getContext('2d');
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+      context.fillStyle = 'white';
+      context.fillRect(0,0,context.canvas.width,context.canvas.height);
       this.imageData = context.getImageData(0,0,context.canvas.width,context.canvas.height);
     },
 
