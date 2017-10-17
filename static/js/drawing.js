@@ -107,6 +107,7 @@
      */
     _init: function () {
       let canvas = this.element, context = canvas.getContext('2d'), plugin = this, socket = this.options.socket;
+      $(canvas).css('cursor','none');
       canvas.width = canvas.getBoundingClientRect().width;
       canvas.height = canvas.getBoundingClientRect().height;
       // $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
@@ -685,6 +686,10 @@
 
     setDrawable: function (draw) {
       this.drawing = draw;
+      if (!draw)
+        $(this.element).css('cursor','auto');
+      else
+        $(this.element).css('cursor','none');
     }
   };
 
