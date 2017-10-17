@@ -31,26 +31,44 @@
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="modal-title">Game Settings</h4>
             </div>
-            <div class="modal-body">
-                <div class="form-group row">
-                    <label for="name" class="col-sm-3 col-form-label">Name</label>
-                    <div class="col-sm-9">
-                        <input type="text" class="form-control" id="name">
+            <form id="settingsForm">
+                <div class="modal-body">
+                    <div class="form-group row">
+                        <label for="name" class="col-sm-3 col-form-label">Name</label>
+                        <div class="col-sm-9">
+                            <input required type="text" class="form-control" id="name">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="wordTheme" class="col-sm-3 col-form-label">Theme</label>
+                        <div class="col-sm-9">
+                            <select required class="form-control" id="wordTheme">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="timeLimit" class="col-sm-3 col-form-label">Time limit</label>
+                        <div class="col-sm-9">
+                            <select required class="form-control" id="timeLimit">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="hasTeams" class="col-sm-3 col-form-label">Play with teams?</label>
+                        <div class="col-sm-9">
+                            <input required type="checkbox" class="form-check" required id="hasTeams">
+                        </div>
                     </div>
                 </div>
-                <div class="form-group row">
-                    <label for="wordTheme" class="col-sm-3 col-form-label">Theme</label>
-                    <div class="col-sm-9">
-                        <select class="form-control" id="wordTheme">
-                        </select>
+                <div class="modal-footer">
+                    <div hidden class="alert alert-warning" id="warning">
+
                     </div>
+                    <button type="submit" class="btn btn-primary" id="customGameStart" >Start Game</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="customGameStart" >Start Game</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
-            </div>        
+            </form>
+        </div>        
         </div>
     </div>
 </body>

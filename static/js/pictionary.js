@@ -12,11 +12,24 @@ let roundTimerID;
 let tickingSound = new Audio("/sound/ticking_cut.mp3");
 tickingSound.loop = true;
 
-const updateScore = (score) => {
+const updateScore = (data) => {
   let scoreboard = $('#pictScore tbody').empty();
-  for (key in score) {
-    if (score.hasOwnProperty(key))
-      scoreboard.append($('<tr>').append($('<td>').text(key)).append($('<td>').text(score[key])));
+  const teams = data.teams;
+  const score = data.score;
+  if (teams) {
+    for (const i of Object.keys(teams)) {
+      const team = teams[i];
+      const teamScore = team.reduce((acc, curr, i, arr) => acc + score[curr], 0);
+      scoreboard.append($('<tr>').append($('<td>').append($('<b>').text('Team ' + i))).append($('<td>').text(teamScore)));
+      for (const member of team) {
+        scoreboard.append($('<tr>').append($('<td>').text(member)).append($('<td>').text(score[member])));
+      }
+    }
+  } else {
+    for (key in score) {
+      if (score.hasOwnProperty(key))
+        scoreboard.append($('<tr>').append($('<td>').text(key)).append($('<td>').text(score[key])));
+    }  
   }
 };
 
@@ -136,13 +149,13 @@ $(document).ready(function () {
     if (data.seconds > 0) {
       updateRoundTimer(data.seconds);
     }
-    updateScore(data.score);
+    updateScore(data);
     const drawing = data.drawer == id;
     updateStatus(data.state, drawing, data.drawerName, data.currentWord);
     whiteboard.load(data.clicks);
-  }).on('updateScore', (score) => {
-    console.log(score);
-    updateScore(score);
+  }).on('updateScore', (data) => {
+    console.log(data);
+    updateScore(data);
   }).on('nextRound', (data) => {
     if (data) {
       let newRoundSound = new Audio("/sound/low_bell.mp3");
@@ -151,7 +164,7 @@ $(document).ready(function () {
       tickingSound.pause();
       tickingSound.currentTime = 0;
 
-      updateScore(data.score);
+      updateScore(data);
       const drawing = data.drawer == id;
       whiteboard.setDrawable(drawing);
       updateStatus(IN_PROGRESS, drawing, data.drawerName, data.currentWord);

@@ -12,6 +12,15 @@ const getSettings = function(req, res) {
       values: wordlist.getThemes(),
       default: wordlist.DEFAULT_THEME
     },
+    timeLimit: {
+      values: [
+        { value: 30, display: 'Blitz (30s)'},
+        { value: 60, display: 'Normal (60s)'},
+        { value: 90, display: 'Long (90s)'},
+        { value: 120, display: 'Super Long (120s)'}
+      ],
+      default: 60
+    },
     name: {
       default: generateName()
     }
