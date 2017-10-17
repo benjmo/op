@@ -120,10 +120,13 @@ $(document).ready(function () {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(resizeUI,500);
   });
+  whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
+  messenger = $('.messenger').pictMessenger({socket: socket, height: 100, inputHeight:5});
   socket.on('clientInfo', (data) =>  {
     console.log(data);
     if (data.status) {
       alert('Already in a game');
+      window.location.replace('/');
       error = true;
       return;
     }
@@ -139,8 +142,6 @@ $(document).ready(function () {
       get_username(socket);
     }
     id = data.id;
-    whiteboard = $("#myDrawing").pictWhiteboard({socket: socket, drawing: true});
-    messenger = $('.messenger').pictMessenger({socket: socket, height: 100, inputHeight:5});
   });
   if (error)
     return;

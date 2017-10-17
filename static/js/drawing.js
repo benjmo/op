@@ -332,22 +332,6 @@
           plugin.setColor(color.toHexString());
         }
       });
-      let toolPicker = $('<div>');
-      for (let tool of this.options.tools) {
-        toolPicker.append($('<button>').addClass('btn toolPicker').text(tool));
-      }
-      let sizePicker = $('<div>');
-      for (let size of this.options.sizes) {
-        sizePicker.append($('<button>').addClass('btn sizePicker').text(size.name).click(function() {
-          console.log(this);
-          plugin.setSize(size.size);
-          $(this).parent().find('.active').removeClass('active');
-          $(this).addClass('active');
-        }))
-      }
-      toolPicker.append($('<label>').append($('<input type="checkbox">').click(function() {
-        plugin.isFilled = this.checked;
-      })).append(" Fill Shape"));
       $(document).
       // on('click','.colorPicker', function() {
       //   plugin.setColor($(this).css('background-color'));
@@ -359,6 +343,10 @@
         plugin.setTool(tool);
         $(this).parent().find('.active.toolPicker').removeClass('active');
         $(this).addClass('active');
+      }).
+      on('input','#sizePicker', function() {
+        $('#sizeLabel').text("Width: "+this.value);
+        plugin.setSize(parseInt(this.value));
       });
       // $('#drawingTools').append(toolPicker).append(sizePicker);
     },
