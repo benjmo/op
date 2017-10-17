@@ -580,6 +580,7 @@
      */
     clear: function() {
       this.clicks = [];
+      this.tempClicks = [];
       let context = this.element.getContext('2d');
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
       this.imageData = context.getImageData(0,0,context.canvas.width,context.canvas.height);
@@ -590,6 +591,7 @@
      */
     load: function (clicks) {
       this.clicks = clicks;
+      this.tempClicks = [];
       this.redraw();
     },
 
