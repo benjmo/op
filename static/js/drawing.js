@@ -23,7 +23,7 @@
     this.drawing = true;
     this.drawingTool = 'pencil';
     this.isFilled = false;
-    this.color = '#000000';
+    this.color = '#000';
     this.width = 10;
     this.clicks = [];
     this.prevClick = null;
@@ -113,9 +113,9 @@
       // $(canvas).attr("width", canvas.getBoundingClientRect().width).attr("height", canvas.getBoundingClientRect().height);
       let offsetLeft = canvas.getBoundingClientRect().left,
         offsetTop = canvas.getBoundingClientRect().top;
-      // context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
-      // context.fillStyle = 'white';
-      // context.fillRect(0,0,context.canvas.width,context.canvas.height);
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+      context.fillStyle = 'white';
+      context.fillRect(0,0,context.canvas.width,context.canvas.height);
       this.imageData = context.getImageData(0,0,canvas.width,canvas.height);
       if (context) {
         let paint;
@@ -332,22 +332,6 @@
           plugin.setColor(color.toHexString());
         }
       });
-      let toolPicker = $('<div>');
-      for (let tool of this.options.tools) {
-        toolPicker.append($('<button>').addClass('btn toolPicker').text(tool));
-      }
-      let sizePicker = $('<div>');
-      for (let size of this.options.sizes) {
-        sizePicker.append($('<button>').addClass('btn sizePicker').text(size.name).click(function() {
-          console.log(this);
-          plugin.setSize(size.size);
-          $(this).parent().find('.active').removeClass('active');
-          $(this).addClass('active');
-        }))
-      }
-      toolPicker.append($('<label>').append($('<input type="checkbox">').click(function() {
-        plugin.isFilled = this.checked;
-      })).append(" Fill Shape"));
       $(document).
       // on('click','.colorPicker', function() {
       //   plugin.setColor($(this).css('background-color'));
@@ -359,6 +343,10 @@
         plugin.setTool(tool);
         $(this).parent().find('.active.toolPicker').removeClass('active');
         $(this).addClass('active');
+      }).
+      on('input','#sizePicker', function() {
+        $('#sizeLabel').text("Width: "+this.value);
+        plugin.setSize(parseInt(this.value));
       });
       // $('#drawingTools').append(toolPicker).append(sizePicker);
     },
@@ -580,8 +568,11 @@
      */
     clear: function() {
       this.clicks = [];
+      this.tempClicks = [];
       let context = this.element.getContext('2d');
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+      context.fillStyle = 'white';
+      context.fillRect(0,0,context.canvas.width,context.canvas.height);
       this.imageData = context.getImageData(0,0,context.canvas.width,context.canvas.height);
     },
 
@@ -590,6 +581,7 @@
      */
     load: function (clicks) {
       this.clicks = clicks;
+      this.tempClicks = [];
       this.redraw();
     },
 
