@@ -158,16 +158,18 @@ $(document).ready(function () {
     updateScore(data);
   }).on('nextRound', (data) => {
     if (data) {
+      //new round start
       let newRoundSound = new Audio("/sound/low_bell.mp3");
       newRoundSound.play();
-
-      tickingSound.pause();
-      tickingSound.currentTime = 0;
 
       updateScore(data);
       const drawing = data.drawer == id;
       whiteboard.setDrawable(drawing);
       updateStatus(IN_PROGRESS, drawing, data.drawerName, data.currentWord);
+    } else {
+      // round end
+      tickingSound.pause();
+      tickingSound.currentTime = 0;
     }
   }).on('roundTimer', (seconds) => {
     updateRoundTimer(seconds);
