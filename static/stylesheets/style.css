@@ -12,6 +12,6 @@
   text-align: center;
 }
 
-#pictStatus {
+.statusLine {
   padding: 10px;
 }

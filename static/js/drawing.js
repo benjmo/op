@@ -294,7 +294,7 @@
           let interval;
           if (data == null) {
             let time = 5;
-            $('#pictStatus').text(`Next Round in ${time}`);
+            $('#pictStatus').text(`Next round in ${time}`);
             interval = setInterval(() => {
               time-=1;
               if (time == 0) {
@@ -302,7 +302,7 @@
                 plugin.clear();
                 return;
               }
-              $('#pictStatus').text(`Next Round in ${time}`);
+              $('#pictStatus').text(`Next round in ${time}`);
             },1000);
           } else {
             clearInterval(interval);

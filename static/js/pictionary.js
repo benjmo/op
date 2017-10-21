@@ -41,13 +41,13 @@ const updateStatus = (status, drawing, drawerName, currentWord) => {
   let statusText = $('#pictStatus');
   switch (status) {
     case NOT_STARTED:
-      statusText.text(`New Game starting soon`);
+      statusText.text(`New game starting soon`);
       break;
     case WAITING:
       statusText.text(`Waiting for more players`);
       break;
     case STARTING:
-      statusText.text(`New Round Starting`);
+      statusText.text(`New round starting`);
       break;
     case IN_PROGRESS:
       if (drawing) {
@@ -57,10 +57,10 @@ const updateStatus = (status, drawing, drawerName, currentWord) => {
       }
       break;
     case ROUND_ENDED:
-      statusText.text(`New Round starting soon`);
+      statusText.text(`New round starting soon`);
       break;
     case GAME_OVER:
-      statusText.text(`Game Over: New Game starting soon`);
+      statusText.text(`Game Over: New game starting soon`);
       break;
   }
 };
