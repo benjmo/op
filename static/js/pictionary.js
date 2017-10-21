@@ -26,13 +26,13 @@ const updateScore = (data) => {
         scoreboard.append($('<tr>').append($('<td>').append($('<b style="color:#33ccff">').text('Team ' + i))).append($('<td style="color:#33ccff">').text(teamScore)));
       }
       for (const member of team) {
-        scoreboard.append($('<tr>').append($('<td>').text(member)).append($('<td>').text(score[member])));
+        scoreboard.append($('<tr>').append($('<td>').html(member)).append($('<td>').text(score[member])));
       }
     }
   } else {
     for (key in score) {
       if (score.hasOwnProperty(key))
-        scoreboard.append($('<tr>').append($('<td>').text(key)).append($('<td>').text(score[key])));
+        scoreboard.append($('<tr>').append($('<td>').html(key)).append($('<td>').text(score[key])));
     }  
   }
 };
@@ -53,7 +53,7 @@ const updateStatus = (status, drawing, drawerName, currentWord) => {
       if (drawing) {
         statusText.html(`Your word is <strong>${currentWord}</strong>`);
       } else {
-        statusText.text(`${drawerName}'s turn to draw`);
+        statusText.html(`${drawerName}'s turn to draw`);
       }
       break;
     case ROUND_ENDED:

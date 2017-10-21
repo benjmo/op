@@ -144,7 +144,7 @@ String.prototype.replaceAt=function(index, replacement) {
 
 const sanitize = function(html) {
   return sanitizeHtml(html, {
-    allowedTags: ['b', 'i', 'em', 'strong', 'strike', 'code'],
+    allowedTags: ['b', 'i', 'em', 'strong', 'strike', 'u'],
   });
 };
 
