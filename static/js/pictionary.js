@@ -20,7 +20,11 @@ const updateScore = (data) => {
     for (const i of Object.keys(teams)) {
       const team = teams[i];
       const teamScore = team.reduce((acc, curr, i, arr) => acc + score[curr], 0);
-      scoreboard.append($('<tr>').append($('<td>').append($('<b>').text('Team ' + i))).append($('<td>').text(teamScore)));
+      if (i == 1) {
+        scoreboard.append($('<tr>').append($('<td>').append($('<b style="color:#cc0099">').text('Team ' + i))).append($('<td style="color:#cc0099">').text(teamScore)));
+      } else {
+        scoreboard.append($('<tr>').append($('<td>').append($('<b style="color:#33ccff">').text('Team ' + i))).append($('<td style="color:#33ccff">').text(teamScore)));
+      }
       for (const member of team) {
         scoreboard.append($('<tr>').append($('<td>').text(member)).append($('<td>').text(score[member])));
       }
