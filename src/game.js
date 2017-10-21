@@ -118,14 +118,14 @@ const chatMessage = function (data) {
       // player correctly guessed
       if (room.hasTeams) { // to everyone else
         if (room.getUserTeam(this.getID()) == 1) {
-          io.to(room.id).emit('chatMessage', `<span style="color:#cc0099">${this.name} successfully guessed the word!</span>`);
+          socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#cc0099"><strong>${this.name}</strong> successfully guessed the word!</span>`);
         } else {
-          io.to(room.id).emit('chatMessage', `<span style="color:#33ccff">${this.name} successfully guessed the word!</span>`);
+          socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#33ccff"><strong>${this.name}</strong> successfully guessed the word!</span>`);
         }
       } else {
-        socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); 
+        socket.broadcast.to(room.id).emit('chatMessage', `<strong>${this.name}</strong> successfully guessed the word!`); 
       }
-      socket.emit('chatMessage', `You guessed the word: ${room.currentWord}!`); // to self
+      socket.emit('chatMessage', `You guessed the word: <strong>${room.currentWord}</strong>!`); // to self
       room.awardPoints(this.getID());
     } else {
       socket.emit('chatMessage','Please don\'t reveal the word in chat');
@@ -167,12 +167,12 @@ const nameMessage = function (name) {
     // broadcast to everyone in the room
     if (room.hasTeams) {
       if (room.getUserTeam(this.getID()) == 1) {
-        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#cc0099">${this.name} has joined the room</span>`);
+        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#cc0099"><strong>${this.name}</strong> has joined the room</span>`);
       } else {
-        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#33ccff">${this.name} has joined the room</span>`);
+        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#33ccff"><strong>${this.name}</strong> has joined the room</span>`);
       }
     } else {
-      this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`);
+      this.socket.broadcast.to(room.id).emit('chatMessage', `<strong>${this.name}</strong> has joined the room`);
     }
     this.session.name = name;
     this.session.save();
