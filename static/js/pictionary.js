@@ -185,10 +185,10 @@ $(document).ready(function () {
   }).on('chatMessage', (msg) => {
     let messageSound = new Audio("/sound/single_tap.mp3");
     messageSound.play();
-  });//.on('skipDrawing', () => {
-  //   let skipSound = new Audio("/sound/high_ding.mp3");
-  //   skipSound.play();
-  // });
+  }).on('sysMessage', (msg) => {
+    let skipSound = new Audio("/sound/high_ding.mp3");
+    skipSound.play();
+  });
 
   $('#clear').click(() => {
     socket.emit('clear');

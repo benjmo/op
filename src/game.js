@@ -92,7 +92,7 @@ const giveHint = function() {
       this.room.hintsGiven < 3) {
     let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
     this.io.to(this.room.id).emit('hint', hint);
-    this.io.to(this.room.id).emit('chatMessage', "Hint: " + hint);
+    this.io.to(this.room.id).emit('sysMessage', "Hint: " + hint);
     this.room.hintsGiven++;
   }
 };
