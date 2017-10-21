@@ -115,7 +115,15 @@ const chatMessage = function (data) {
   if (isCorrect === util.CORRECT_GUESS) {
     if (isGuessing) {
       // player correctly guessed
-      socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); // to everyone else
+      if (room.hasTeams) { // to everyone else
+        if (room.getUserTeam(this.getID()) == 1) {
+          io.to(room.id).emit('chatMessage', `<span style="color:#cc0099">${this.name} successfully guessed the word!</span>`);
+        } else {
+          io.to(room.id).emit('chatMessage', `<span style="color:#33ccff">${this.name} successfully guessed the word!</span>`);
+        }
+      } else {
+        socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); 
+      }
       socket.emit('chatMessage', `You guessed the word: ${room.currentWord}!`); // to self
       room.awardPoints(this.getID());
     } else {
@@ -129,7 +137,15 @@ const chatMessage = function (data) {
     }
   } else {
     // just a normal message
-    io.to(room.id).emit('chatMessage', `<strong>${this.name}</strong>: ${data}`);
+    if (room.hasTeams) {
+      if (room.getUserTeam(this.getID()) == 1) {
+        io.to(room.id).emit('chatMessage', `<strong style="color:#cc0099">${this.name}</strong>: ${data}`);
+      } else {
+        io.to(room.id).emit('chatMessage', `<strong style="color:#33ccff">${this.name}</strong>: ${data}`);
+      }
+    } else {
+      io.to(room.id).emit('chatMessage', `<strong>${this.name}</strong>: ${data}`);
+    }
   }
 };
 
@@ -145,8 +161,17 @@ const nameMessage = function (name) {
   if (unique) {
     this.name = name;
     this.socket.emit('gameDetails', room.getState());
-    this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`); // broadcast to everyone in the room
     room.addUser(this.getID(), this.name);
+    // broadcast to everyone in the room
+    if (room.hasTeams) {
+      if (room.getUserTeam(this.getID()) == 1) {
+        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#cc0099">${this.name} has joined the room</span>`);
+      } else {
+        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#33ccff">${this.name} has joined the room</span>`);
+      }
+    } else {
+      this.socket.broadcast.to(room.id).emit('chatMessage', `${this.name} has joined the room`);
+    }
     this.session.name = name;
     this.session.save();
   }
@@ -255,7 +280,15 @@ const endRound = function() {
   } else {
     roundEndString = '<p>The round is over! Points earned:</p>\n';
     for (const player of Object.keys(this.pointsEarned)) {
-      roundEndString += '<p>' + player + ': ' + this.pointsEarned[player] + '</p>'
+      if (this.hasTeams) {
+        if (this.getUserTeam(player) == 1) {
+          roundEndString += '<p><span style="color:#cc0099">' + player + '</span>: ' + this.pointsEarned[player] + '</p>'
+        } else {
+          roundEndString += '<p><span class="colour" style="color:#33ccff">' + player + '</span>: ' + this.pointsEarned[player] + '</p>'
+        }
+      } else {
+        roundEndString += '<p>' + player + ': ' + this.pointsEarned[player] + '</p>'
+      }
     }
   }
   this.io.to(this.id).emit('chatMessage', roundEndString);
