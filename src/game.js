@@ -127,10 +127,10 @@ const chatMessage = function (data) {
       if (room.hasTeams) { // to everyone else
         if (room.getUserTeam(this.getID()) == 1) {
           emitData.message = `<span style="color:#cc0099"><strong>${this.name}</strong> successfully guessed the word!</span>`;
-          io.to(room.id).emit('sysMessage', emitData);
+          socket.broadcast.to(room.id).emit('sysMessage', emitData);
         } else {
           emitData.message = `<span style="color:#33ccff"><strong>${this.name}</strong> successfully guessed the word!</span>`
-          io.to(room.id).emit('sysMessage', emitData);
+          socket.broadcast.to(room.id).emit('sysMessage', emitData);
         }
       } else {
         emitData.message = `<strong>${this.name}</strong> successfully guessed the word!`;
