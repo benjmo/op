@@ -166,7 +166,7 @@ $(document).ready(function () {
       //new round start
       let newRoundSound = new Audio("/sound/low_bell.mp3");
       newRoundSound.play();
-      blinkTitle("* New Round *", "WebSketch", 500);
+      blinkTitle("WebSketch", "* New Round *", 500, true);
 
       updateScore(data);
       const drawing = data.drawer == id;
