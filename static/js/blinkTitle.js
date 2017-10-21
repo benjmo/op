@@ -39,6 +39,7 @@ function blinkTitle(msg1, msg2, delay, isFocus, timeout) {
     window.onfocus = function() {
       onPage = true;
       document.title = initialTitle;
+      clearInterval(hold);
     };
 
     window.onblur = function() {
