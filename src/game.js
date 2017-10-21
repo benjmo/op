@@ -92,7 +92,12 @@ const giveHint = function() {
       this.room.hintsGiven < 3) {
     let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
     this.io.to(this.room.id).emit('hint', hint);
-    this.io.to(this.room.id).emit('sysMessage', "Hint: " + hint);
+    let emitData = {
+      message: 'Hint: ' + hint,
+      type: 'hint'
+    }
+
+    this.io.to(this.room.id).emit('sysMessage', emitData);
     this.room.hintsGiven++;
   }
 };
@@ -112,27 +117,37 @@ const chatMessage = function (data) {
   }
   // if the guess is correct or close)
   let isCorrect = room.currentWord != "" && util.checkGuess(room.currentWord, data);
-  data = util.sanitize(data);
   if (isCorrect === util.CORRECT_GUESS) {
+    let emitData = {
+      type: 'correctGuess'
+    }
     if (isGuessing) {
       // player correctly guessed
       if (room.hasTeams) { // to everyone else
         if (room.getUserTeam(this.getID()) == 1) {
-          io.to(room.id).emit('chatMessage', `<span style="color:#cc0099">${this.name} successfully guessed the word!</span>`);
+          emitData.message = `<span style="color:#cc0099">${this.name} successfully guessed the word!</span>`;
+          io.to(room.id).emit('sysMessage', emitData);
         } else {
-          io.to(room.id).emit('chatMessage', `<span style="color:#33ccff">${this.name} successfully guessed the word!</span>`);
+          emitData.message = `<span style="color:#33ccff">${this.name} successfully guessed the word!</span>`
+          io.to(room.id).emit('sysMessage', emitData);
         }
       } else {
-        socket.broadcast.to(room.id).emit('chatMessage', `${this.name} successfully guessed the word!`); 
+        emitData.message = `${this.name} successfully guessed the word!`;
+        socket.broadcast.to(room.id).emit('sysMessage', emitData); 
       }
-      socket.emit('chatMessage', `You guessed the word: ${room.currentWord}!`); // to self
+      emitData.message = `You guessed the word: ${room.currentWord}!`;
+      socket.emit('sysMessage', emitData); // to self
       room.awardPoints(this.getID());
     } else {
       socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
   } else if (isCorrect === util.CLOSE_GUESS) {
+    let emitData = {
+      type: 'closeGuess'
+    }
     if (isGuessing) {
-      socket.emit('chatMessage', `${data} is close!`); //to self      
+      emitData.message = `${data} is close!`;
+      socket.emit('sysMessage', emitData); //to self      
     } else {
       socket.emit('chatMessage','Please don\'t reveal the word in chat');
     }
@@ -158,7 +173,6 @@ const chatMessage = function (data) {
 const nameMessage = function (name) {
   // Set if unique, ask again if not
   let room = this.room;
-  name = util.sanitize(name);
   let unique = !room.hasName(name);
   if (unique) {
     this.name = name;

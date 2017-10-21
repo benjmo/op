@@ -166,6 +166,7 @@ $(document).ready(function () {
       //new round start
       let newRoundSound = new Audio("/sound/low_bell.mp3");
       newRoundSound.play();
+      blinkTitle("* New Round *", "WebSketch", 500);
 
       updateScore(data);
       const drawing = data.drawer == id;
@@ -185,9 +186,17 @@ $(document).ready(function () {
   }).on('chatMessage', (msg) => {
     let messageSound = new Audio("/sound/single_tap.mp3");
     messageSound.play();
-  }).on('sysMessage', (msg) => {
-    let skipSound = new Audio("/sound/high_ding.mp3");
-    skipSound.play();
+  }).on('sysMessage', (data) => {
+    if (data.type == 'hint') {
+      let hintSound = new Audio("/sound/high_ding.mp3");
+      hintSound.play();
+    } else if (data.type == 'correctGuess') {
+      let correctSound = new Audio("/sound/notification_happy.wav");
+      correctSound.play();
+    } else if (data.type == 'closeGuess') {
+      let closeSound = new Audio("/sound/notification_short.mp3");
+      closeSound.play();
+    }
   });
 
   $('#clear').click(() => {

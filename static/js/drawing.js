@@ -492,7 +492,7 @@
       let x = click.x * width, y = click.y * height;
       let startX = click.startX * width, startY = click.startY * height;
       //clearTimeout(this.imageDataTimer);
-      console.log(click);
+      // console.log(click);
       if (!click.status || click.status != 'end') {
         context.putImageData(this.imageData,0,0);
       }

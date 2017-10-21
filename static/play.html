@@ -10,6 +10,8 @@
     <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.js"></script>
+    <script src="js/blinkTitle.js"></script>
+
     <script src='/socket.io/socket.io.js'></script>
     <script src="js/drawing.js"></script>
     <script src="js/messenger.js"></script>
@@ -56,6 +58,7 @@
                     </ul>
                 </div>
                 <div class="pull-right">
+                    <p id="hintText"></p>
                     <button class="btn btn-default" id="clear">Clear</button>
                     <button class="btn btn-default" id="skip">Skip</button>
                     <button class="btn btn-default" id="hint">Give Hint</button>
@@ -64,7 +67,6 @@
                 <canvas id="myDrawing" width="800" height="800">
                     <p>Your browser doesn't support canvas</p>
                 </canvas>
-                <p id="hintText"></p>
             </div>
             <div class="col-xs-2 no-padding" id="scoreSettingsCol">
                 <div id="pictScore">

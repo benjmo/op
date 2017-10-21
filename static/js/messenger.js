@@ -59,8 +59,8 @@
       opts.socket.on('chatMessage', (msg) => {
         messageDiv.append($('<li>').append(msg));
         scrollBottom();
-      }).on('sysMessage', (msg) => {
-        messageDiv.append($('<li>').append(msg));
+      }).on('sysMessage', (data) => { // data.type and data.message
+        messageDiv.append($('<li>').append(data.message));
         scrollBottom();
       });
     });
