@@ -112,6 +112,7 @@ const chatMessage = function (data) {
   }
   // if the guess is correct or close)
   let isCorrect = room.currentWord != "" && util.checkGuess(room.currentWord, data);
+  data = util.sanitize(data);
   if (isCorrect === util.CORRECT_GUESS) {
     if (isGuessing) {
       // player correctly guessed
@@ -157,6 +158,7 @@ const chatMessage = function (data) {
 const nameMessage = function (name) {
   // Set if unique, ask again if not
   let room = this.room;
+  name = util.sanitize(name);
   let unique = !room.hasName(name);
   if (unique) {
     this.name = name;
