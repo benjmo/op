@@ -10,9 +10,9 @@ const WIN_SCORE = 5;
 // base points for guessing correctly
 const POINTS_GUESS = 10;
 // reduction in points for each person who's already guessed
-const POINTS_REDUCE = 3;
-// base points for your drawing getting guessed (per correct guess)
-const POINTS_DRAW = 4;
+const POINTS_REDUCE = 1;
+// base points for your drawing getting guessed (initial guess)
+const POINTS_DRAW = 10;
 
 // amount of time given for a new round (in seconds)
 const ROUND_DURATION = 120;
@@ -268,12 +268,17 @@ const currentDrawer = function() {
 const awardPoints = function(winner) {
   // drawer gets pointsEarned in a round
   const correctGuesses = Object.keys(this.pointsEarned).length - 1;
-  const value = POINTS_GUESS - correctGuesses * POINTS_REDUCE - this.hintsGiven;
+  const value = Math.max(POINTS_GUESS - (correctGuesses * POINTS_REDUCE), 1);
   this.addScore(winner, value);
-  this.addScore(this.drawer, POINTS_DRAW - this.hintsGiven);
+  if (correctGuesses > 0) {
+    this.addScore(this.drawer, 1);
+    this.pointsEarned[this.names[this.drawer]] += 1;
+  } else {
+    this.addScore(this.drawer, POINTS_DRAW - this.hintsGiven);
+    this.pointsEarned[this.names[this.drawer]] += (POINTS_DRAW - this.hintsGiven);
+  }
   this.io.to(this.id).emit('updateScore', {teams: this.teams, score: this.score});
   this.pointsEarned[this.names[winner]] = value;
-  this.pointsEarned[this.names[this.drawer]] += (4 - this.hintsGiven);
 
   // if either everyone has successfully guessed, or guesses are no longer worth points
   if (value - POINTS_REDUCE <= 0 || Object.keys(this.pointsEarned).length === this.users.length) {
