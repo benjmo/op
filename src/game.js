@@ -5,7 +5,7 @@
 const util = require('./util');
 const wordlist = require('./wordlist');
 const roomUtil = require('./room');
-const WIN_SCORE = 5;
+//const WIN_SCORE = 5;
 
 // base points for guessing correctly
 const POINTS_GUESS = 10;
@@ -89,7 +89,7 @@ const clearDrawing = function () {
  */
 const giveHint = function() {
   if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null) &&
-      this.room.hintsGiven < 3) {
+      this.room.state === IN_PROGRESS && this.room.hintsGiven < 3) {
     let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
     this.io.to(this.room.id).emit('hint', hint);
     let emitData = {
@@ -350,6 +350,7 @@ const nextRound = function() {
   io.to(this.id).emit('hint', "");
   io.to(this.id).emit('nextRound');
   io.to(this.id).emit('chatMessage', 'The next round will begin soon...');
+  this.state = STARTING;
   setTimeout(function() {
     io.to(room.id).emit('nextRound', {
       drawer: room.drawer,
@@ -395,9 +396,9 @@ const clearRoundTimer = function() {
 const addScore = function(user, score) {
   const name = this.names[user];
   this.score[name] += score;
-  if (this.score[name] >= WIN_SCORE) {
+  /*if (this.score[name] >= WIN_SCORE) {
     this.state = GAME_OVER;
-  }
+  }*/
 };
 
 /**
