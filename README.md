@@ -13,7 +13,3 @@ If you modify the server code, you'll need to stop and restart the server for ch
 1. Run `npm test` (Server does not need to be running)
 
 Don't forget to `npm install` beforehand so mocha/chai are installed
-
-## How to access op
-* `localhost:3000/play/ID` uses the file rendered by the pug templates
-* `localhost:3000/index.html?game=ID` uses the html file in static/
