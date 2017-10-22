@@ -200,7 +200,7 @@ $(document).ready(function () {
       updateRoundTimer(data.seconds);
     }
     updateScore(data);
-    const drawing = data.drawer == id;
+    const drawing = data.drawer == id || data.drawer == null;
     updateStatus(data.state, drawing, data.drawerName, data.currentWord);
     whiteboard.load(data.clicks);
     whiteboard.setDrawable(drawing);
