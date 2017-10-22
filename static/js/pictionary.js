@@ -182,11 +182,12 @@ $(document).ready(function () {
         alert('Already in a game');
         window.location.replace('/');
         error = true;
-        return;
-      }
-      if (!data.name) {
+      } else if (!data.room) {
+        alert('Error no game ID entered');
+        window.location.replace('/');
         error = true;
-        return;
+      } else if (!data.name) {
+        get_username(socket);
       }
     }
     id = data.id;

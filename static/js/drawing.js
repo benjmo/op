@@ -138,10 +138,10 @@
 
         const pushClick = (click) => {
           this.tempClicks.push(click);
-          socket.emit('draw',click);
           this.draw(click);
+          socket.emit('draw',click);
         };
-
+        $(window).resize();
         $(canvas).mousedown(function (e) {
           if (!plugin.drawing)
             return;
