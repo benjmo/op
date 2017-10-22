@@ -331,7 +331,7 @@
           colorPicker.css('background-color',color.toHexString());
           plugin.setColor(color.toHexString());
           if (color.toHexString() != "#ffffff") {
-            $('.toolPicker').css('color', color.toHexString());
+            $('.coloredTool').css('color', color.toHexString());
           }
         }
       });
