@@ -1,5 +1,4 @@
 const fs = require('fs');
-const os = require('os');
 
 // Base directory where the wordlists are stored (as .txt files)
 const BASE_DIR = __dirname + '/wordlists/';
@@ -12,7 +11,7 @@ const DEFAULT_THEME = 'Variety';
  */
 const getRandomWord = function(theme) {
   const wordlist = fs.readFileSync(BASE_DIR + theme + '.txt', 'utf8');
-  const words = wordlist.trim().split(os.EOL);
+  const words = wordlist.trim().split(/\r?\n/);
   return words[Math.floor(Math.random() * words.length)];
 };
 

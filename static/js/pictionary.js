@@ -182,11 +182,12 @@ $(document).ready(function () {
         alert('Already in a game');
         window.location.replace('/');
         error = true;
-        return;
-      }
-      if (!data.name) {
+      } else if (!data.room) {
+        alert('Error no game ID entered');
+        window.location.replace('/');
         error = true;
-        return;
+      } else if (!data.name) {
+        get_username(socket);
       }
     }
     id = data.id;
@@ -199,9 +200,17 @@ $(document).ready(function () {
       updateRoundTimer(data.seconds);
     }
     updateScore(data);
-    const drawing = data.drawer == id;
+    const drawing = data.drawer == id || data.drawer == null;
     updateStatus(data.state, drawing, data.drawerName, data.currentWord);
     whiteboard.load(data.clicks);
+    whiteboard.setDrawable(drawing);
+    if (drawing) {
+      $('#drawingTools').show();
+      $('#hintText').hide();
+    } else {
+      $('#drawingTools').hide();
+      $('#hintText').show();
+    }
     updateSettings(data.wordTheme, data.timeLimit, data.hasTeams);
   }).on('updateScore', (data) => {
     console.log(data);
@@ -216,6 +225,12 @@ $(document).ready(function () {
       updateScore(data);
       const drawing = data.drawer == id;
       whiteboard.setDrawable(drawing);
+      if (drawing) {
+        $('#drawingTools').show();
+      } else {
+        $('#drawingTools').hide();
+      }
+
       updateStatus(IN_PROGRESS, drawing, data.drawerName, data.currentWord);
     } else {
       // round end

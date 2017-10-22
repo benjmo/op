@@ -39,33 +39,35 @@
                         <p class="statusLine" id="roundTimer"></p>
                     </div>
                 </div>
-                <div id="drawingTools" class="pull-left">                    &nbsp;
-                    <button class="btn btn-default" id="colorPicker">&nbsp;&nbsp;&nbsp;</button>
-                    <button class="btn btn-default toolPicker" id="tool-pencil"><span class="glyphicon glyphicon-pencil"></span></button>
-                    <button class="btn btn-default toolPicker" id="tool-eraser"><span class="glyphicon glyphicon-erase"></span></button>
-                    <button class="btn btn-default toolPicker" id="tool-fill"><i class="fi-paint-bucket"></i></button>
-                    <button class="btn btn-default toolPicker" id="tool-line">&#9585;</button>
-                    <button class="btn btn-default toolPicker" id="tool-rectangle">&#9723;</button>
-                    <button class="btn btn-default toolPicker" id="tool-circle">&#9711;</button>
-                    <input id="fillShape" type="checkbox" data-onstyle="default">
+                <div id="drawingTools">
+                    <div class="pull-left align-tools">                    &nbsp;
+                        <button class="btn btn-default" id="colorPicker">&nbsp;&nbsp;&nbsp;</button>
+                        <button class="btn btn-default toolPicker" id="tool-pencil"><span class="glyphicon glyphicon-pencil"></span></button>
+                        <button class="btn btn-default toolPicker" id="tool-eraser"><span class="glyphicon glyphicon-erase"></span></button>
+                        <button class="btn btn-default toolPicker" id="tool-fill"><i class="fi-paint-bucket"></i></button>
+                        <button class="btn btn-default toolPicker" id="tool-line">&#9585;</button>
+                        <button class="btn btn-default toolPicker" id="tool-rectangle">&#9723;</button>
+                        <button class="btn btn-default toolPicker" id="tool-circle">&#9711;</button>
+                        <input id="fillShape" type="checkbox" data-onstyle="default">
+                    </div>
+                    <div class="dropdown pull-left align-tools">
+                        &nbsp;
+                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="sizeLabel">Width: 10
+                            <span class="caret"></span></button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <input type="range" min="1" max="50" value="10" class="slider" id="sizePicker">
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="pull-right align-tools">
+                        <button class="btn btn-info game-btn" id="clear">Clear</button>
+                        <button class="btn btn-danger game-btn" id="skip">Skip</button>
+                        <button class="btn btn-success game-btn" id="hint">Give Hint</button>
+                        &nbsp;
+                    </div>
                 </div>
-                <div class="dropdown pull-left">
-                    &nbsp;
-                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="sizeLabel">Width: 10
-                        <span class="caret"></span></button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <input type="range" min="1" max="50" value="10" class="slider" id="sizePicker">
-                        </li>
-                    </ul>
-                </div>
-                <div class="pull-right">
-                    <p id="hintText"></p>
-                    <button class="btn btn-default" id="clear">Clear</button>
-                    <button class="btn btn-default" id="skip">Skip</button>
-                    <button class="btn btn-default" id="hint">Give Hint</button>
-                    &nbsp;
-                </div>
+                <p class="text-center" id="hintText" style="display:none;">Hint: </p>
                 <canvas id="myDrawing" width="800" height="800">
                     <p>Your browser doesn't support canvas</p>
                 </canvas>
