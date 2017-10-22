@@ -227,10 +227,11 @@ $(document).ready(function () {
       whiteboard.setDrawable(drawing);
       if (drawing) {
         $('#drawingTools').show();
+        $('#hintText').hide();
       } else {
         $('#drawingTools').hide();
+        $('#hintText').show();
       }
-
       updateStatus(IN_PROGRESS, drawing, data.drawerName, data.currentWord);
     } else {
       // round end
