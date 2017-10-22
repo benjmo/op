@@ -108,7 +108,7 @@ $(document).ready(function () {
   let socket = io();
   let params = (new URL(document.location)).searchParams;
   let id = socket.id;
-  let game = params.get("game");
+  let room = params.get("game");
   let whiteboard, messenger;
   let error = false;
   let navbarHeight = 0;
@@ -128,22 +128,20 @@ $(document).ready(function () {
   messenger = $('.messenger').pictMessenger({socket: socket, height: 100, inputHeight:5});
   socket.on('clientInfo', (data) =>  {
     console.log(data);
-    if (data.status) {
-      alert('Already in a game');
-      window.location.replace('/');
-      error = true;
-      return;
-    }
-    if (!data.name) {
-      if (game) {
-        socket.emit('joinRoom', game);
-      } else {
-        alert('No Game entered');
+    if (room && room != data.room) {
+      socket.emit('joinRoom', room);
+      get_username(socket);
+    } else {
+      if (data.status) {
+        alert('Already in a game');
         window.location.replace('/');
         error = true;
         return;
       }
-      get_username(socket);
+      if (!data.name) {
+        error = true;
+        return;
+      }
     }
     id = data.id;
   });

@@ -32,6 +32,9 @@ let shapes = ['rectangle','circle','line'];
  * @param room Room object
  */
 const joinRoom = function (room) {
+  if (this.room) {
+    this.disconnect();
+  }
   this.socket.join(room.id);
   this.room = room;
   this.session.room = room.id;
