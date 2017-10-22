@@ -145,6 +145,21 @@ $(document).ready(function () {
   let navbarHeight = 0;
   let scoreCol = document.getElementById("scoreSettingsCol");
   let scoreboardHeight = 0.5;
+  $('#fillShape').bootstrapToggle({
+    on: 'Fill',
+    off: 'Outline'
+  }).change(function() {
+    let fill = $(this).prop('checked');
+    whiteboard.setFilled(fill);
+    if (fill) {
+      $('#tool-rectangle').html('&#9724;');
+      $('#tool-circle').html('&#11044;');
+    } else {
+      $('#tool-rectangle').html('&#9723;');
+      $('#tool-circle').html('&#9711;');
+      $(this).parent().css('border-color','');
+    }
+  });
   const resizeUI = () => {
     $('#scoreSettingsCol').height($(window).height() - navbarHeight-(scoreCol.offsetHeight-scoreCol.clientHeight));
     $('#pictScore').height($('#scoreSettingsCol').height()*scoreboardHeight);

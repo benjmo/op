@@ -330,6 +330,9 @@
         change: (color) => {
           colorPicker.css('background-color',color.toHexString());
           plugin.setColor(color.toHexString());
+          if (color.toHexString() != "#ffffff") {
+            $('.coloredTool').css('color', color.toHexString());
+          }
         }
       });
       $(document).
@@ -603,6 +606,9 @@
 
     setSize: function (size) {
       this.width = size;
+    },
+    setFilled: function (fill) {
+      this.isFilled = fill;
     },
 
     fillCanvas: function (click) {
