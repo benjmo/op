@@ -13,7 +13,7 @@
         $('<input>').height('100%').addClass('form-control')).append(
           $('<div>').width('1%').addClass('input-group-btn').append(
             $('<button>').height('100%').attr('type','submit').addClass('btn btn-default').append(
-              $('<i>').addClass('glyphicon glyphicon-search')
+              $('<i>').attr('id','messengerSend').addClass('material-icons md-18').append('send')
             )));
       let messageDiv = $('<ul>');
       that.append(messageDiv).append(inputForm);
