@@ -501,6 +501,9 @@ const getState = function () {
     score: this.score,
     teams: this.teams,
     clicks: this.clicks,
+    wordTheme: this.wordTheme,
+    timeLimit: this.timeLimit,
+    hasTeams: this.hasTeams,
     seconds: Math.round((this.roundEndTime - Date.now()) / 1000) // seconds left in the round
   };
 };

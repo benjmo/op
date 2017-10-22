@@ -37,6 +37,37 @@ const updateScore = (data) => {
   }
 };
 
+/**
+ * Updates the game settings panel
+ */
+const updateSettings = (wordTheme, timeLimit, hasTeams) => {
+  if (hasTeams) {
+    $('#teamSetting').text('Team Game');
+  } else {
+    $('#teamSetting').text('Individual Game');
+  }
+
+  $('#themeSetting').text(wordTheme);
+
+  let timeSetting = $('#timeSetting');
+  switch (timeLimit) {
+    case 30:
+      timeSetting.text('Blitz (30s)');
+      break;
+    case 60:
+      timeSetting.text('Normal (60s)');
+      break;
+    case 90:
+      timeSetting.text('Long (90s)');
+      break;
+    case 120:
+      timeSetting.text('Super Long (120s)');
+      break;
+  }
+
+  $('#gameSettings').css('visibility', 'visible');
+};
+
 const updateStatus = (status, drawing, drawerName, currentWord) => {
   let statusText = $('#pictStatus');
   switch (status) {
@@ -113,7 +144,7 @@ $(document).ready(function () {
   let error = false;
   let navbarHeight = 0;
   let scoreCol = document.getElementById("scoreSettingsCol");
-  let scoreboardHeight = 2/5;
+  let scoreboardHeight = 0.5;
   const resizeUI = () => {
     $('#scoreSettingsCol').height($(window).height() - navbarHeight-(scoreCol.offsetHeight-scoreCol.clientHeight));
     $('#pictScore').height($('#scoreSettingsCol').height()*scoreboardHeight);
@@ -156,6 +187,7 @@ $(document).ready(function () {
     const drawing = data.drawer == id;
     updateStatus(data.state, drawing, data.drawerName, data.currentWord);
     whiteboard.load(data.clicks);
+    updateSettings(data.wordTheme, data.timeLimit, data.hasTeams);
   }).on('updateScore', (data) => {
     console.log(data);
     updateScore(data);

@@ -16,6 +16,15 @@
   padding: 10px;
 }
 
+#gameSettings {
+  border-top: 1px solid #000000;
+  visibility: hidden;
+}
+
+#gameSettings .row {
+  margin-bottom: 15px;
+}
+
 .material-icons.md-18 {
   font-size: 18px;
 }
