@@ -115,8 +115,11 @@ const chatMessage = function (data) {
   // if the sender can guess (not drawer and hasn't successfully guessed)
   let isGuessing = room.currentDrawer() !== this.getID() && !room.pointsEarned[this.name];
   if (room.hasTeams) {
-    // guesser also has to be on the same team as the drawer
-    isGuessing = isGuessing && room.getUserTeam(room.currentDrawer()) === room.getUserTeam(this.getID());
+    // for team games, only allow people in the same team to guess
+    // unless there's only 10 seconds, then the other team can snipe.
+    const isSameTeam = room.getUserTeam(room.currentDrawer()) === room.getUserTeam(this.getID());
+    const isLateInRound = room.roundEndTime - Date.now() < 10000;
+    isGuessing = isGuessing && (isSameTeam || isLateInRound);
   }
   // if the guess is correct or close)
   let isCorrect = room.currentWord != "" && util.checkGuess(room.currentWord, data);
@@ -269,6 +272,13 @@ const currentDrawer = function() {
  * @param winner The winner of the round, or null if no one won
  */
 const awardPoints = function(winner) {
+  // teams: drawer is awarded 1 point and ends the round
+  if (this.hasTeams) {
+    this.addScore(winner, 1);
+    this.endRound();
+    return;
+  }
+
   // drawer gets pointsEarned in a round
   const correctGuesses = Object.keys(this.pointsEarned).length - 1;
   const value = Math.max(POINTS_GUESS - (correctGuesses * POINTS_REDUCE), 1);
@@ -336,14 +346,7 @@ const nextRound = function() {
   if (this.drawer == null) {
     this.drawer = users[0];
   } else {
-    if (this.hasTeams && this.useTeamScoring) {
-      // consecutive drawers must be from different teams
-      // TODO: don't make it random
-      const newTeam = this.getUserTeam(this.drawer) % this.numTeams + 1; // + 1 after mod becase teams are 1 indexed
-      this.drawer = this.teams[newTeam][Math.floor(Math.random(this.teams[newteam].length))];
-    } else {
-      this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
-    }
+    this.drawer = users[(users.indexOf(this.drawer)+1) % users.length];
   }
   this.clicks = [];
   this.pointsEarned = {};
