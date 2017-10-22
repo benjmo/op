@@ -32,12 +32,12 @@ let shapes = ['rectangle','circle','line'];
  * @param room Room object
  */
 const joinRoom = function (room) {
-  if (this.room) {
+  if (this.room && this.room.getID() != room) {
     this.disconnect();
   }
-  this.socket.join(room.id);
+  this.socket.join(room.getID());
   this.room = room;
-  this.session.room = room.id;
+  this.session.room = room.getID();
   this.session.save();
   this.session.inGame = true;
   this.session.save();
@@ -48,7 +48,7 @@ const joinRoom = function (room) {
  */
 const disconnect = function () {
   if (this.room)
-    this.socket.leave(this.room.id, () => {
+    this.socket.leave(this.room.getID(), () => {
       this.room.disconnectUser(this.getID(),this.session);
     });
 };
@@ -68,7 +68,7 @@ const reconnect = function (room) {
  */
 const draw = function (data) {
   if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null)) {
-    this.io.to(this.room.id).emit('draw', data);
+    this.io.to(this.room.getID()).emit('draw', data);
     if (shapes.includes(data.tool)) {
       if (data.status == "end")
         this.room.addClick(data);
@@ -95,13 +95,13 @@ const giveHint = function() {
   if (this.room && (this.room.currentDrawer() == this.getID() || this.room.currentDrawer() == null) &&
       this.room.state === IN_PROGRESS && this.room.hintsGiven < 3) {
     let hint = util.giveHint(this.room.currentWord, this.room.hintsGiven);
-    this.io.to(this.room.id).emit('hint', hint);
+    this.io.to(this.room.getID()).emit('hint', hint);
     let emitData = {
       message: 'Hint: ' + hint,
       type: 'hint'
     }
 
-    this.io.to(this.room.id).emit('sysMessage', emitData);
+    this.io.to(this.room.getID()).emit('sysMessage', emitData);
     this.room.hintsGiven++;
   }
 };
@@ -135,14 +135,14 @@ const chatMessage = function (data) {
       if (room.hasTeams) { // to everyone else
         if (room.getUserTeam(this.getID()) == 1) {
           emitData.message = `<span style="color:#cc0099"><strong>${this.name}</strong> successfully guessed the word!</span>`;
-          socket.broadcast.to(room.id).emit('sysMessage', emitData);
+          socket.broadcast.to(room.getID()).emit('sysMessage', emitData);
         } else {
           emitData.message = `<span style="color:#33ccff"><strong>${this.name}</strong> successfully guessed the word!</span>`
-          socket.broadcast.to(room.id).emit('sysMessage', emitData);
+          socket.broadcast.to(room.getID()).emit('sysMessage', emitData);
         }
       } else {
         emitData.message = `<strong>${this.name}</strong> successfully guessed the word!`;
-        socket.broadcast.to(room.id).emit('sysMessage', emitData); 
+        socket.broadcast.to(room.getID()).emit('sysMessage', emitData);
       }
       emitData.message = `You guessed the word: <strong>${room.currentWord}</strong>`;
       socket.emit('sysMessage', emitData); // to self
@@ -164,12 +164,12 @@ const chatMessage = function (data) {
     // just a normal message
     if (room.hasTeams) {
       if (room.getUserTeam(this.getID()) == 1) {
-        io.to(room.id).emit('chatMessage', `<strong style="color:#cc0099">${this.name}</strong>: ${data}`);
+        io.to(room.getID()).emit('chatMessage', `<strong style="color:#cc0099">${this.name}</strong>: ${data}`);
       } else {
-        io.to(room.id).emit('chatMessage', `<strong style="color:#33ccff">${this.name}</strong>: ${data}`);
+        io.to(room.getID()).emit('chatMessage', `<strong style="color:#33ccff">${this.name}</strong>: ${data}`);
       }
     } else {
-      io.to(room.id).emit('chatMessage', `<strong>${this.name}</strong>: ${data}`);
+      io.to(room.getID()).emit('chatMessage', `<strong>${this.name}</strong>: ${data}`);
     }
   }
 };
@@ -191,12 +191,12 @@ const nameMessage = function (name) {
     // broadcast to everyone in the room
     if (room.hasTeams) {
       if (room.getUserTeam(this.getID()) == 1) {
-        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#cc0099"><strong>${this.name}</strong> has joined the room</span>`);
+        this.socket.broadcast.to(room.getID()).emit('chatMessage', `<span style="color:#cc0099"><strong>${this.name}</strong> has joined the room</span>`);
       } else {
-        this.socket.broadcast.to(room.id).emit('chatMessage', `<span style="color:#33ccff"><strong>${this.name}</strong> has joined the room</span>`);
+        this.socket.broadcast.to(room.getID()).emit('chatMessage', `<span style="color:#33ccff"><strong>${this.name}</strong> has joined the room</span>`);
       }
     } else {
-      this.socket.broadcast.to(room.id).emit('chatMessage', `<strong>${this.name}</strong> has joined the room`);
+      this.socket.broadcast.to(room.getID()).emit('chatMessage', `<strong>${this.name}</strong> has joined the room`);
     }
     this.session.name = name;
     this.session.save();
@@ -541,6 +541,10 @@ const hasName = function (name) {
   return false;
 };
 
+const getRoomID = function() {
+  return this.id;
+}
+
 /**
  * Game Status's
  * @constant
@@ -574,7 +578,6 @@ function Room(io,id, settings) {
   this.timeOut = {};
   this.clicks = [];
   this.hintsGiven = 0;
-  this.roundTimerID;
   this.roundEndTime = 0;
   this.minPlayers = 2;
   this.timeLimit = 60;
@@ -608,7 +611,8 @@ Room.prototype = {
   addScore,
   addClick,
   clearClicks,
-  hasName
+  hasName,
+  getID : getRoomID,
 };
 
 module.exports = function (io) {
