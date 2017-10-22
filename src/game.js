@@ -481,7 +481,8 @@ const disconnectUser = function(user,session) {
       }
       delete this.score[this.names[user]];
       delete this.names[user];
-      session.destroy();
+      if (session.room == this.id)
+        session.destroy();
       if (user == this.drawer || !this.enoughPlayers()) {
         this.nextRound();
         this.clearClicks();
