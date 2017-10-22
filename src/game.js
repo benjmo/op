@@ -57,6 +57,7 @@ const reconnect = function (room) {
   if (room) {
     this.joinRoom(room);
     room.reconnectUser(this.getID());
+    this.socket.emit('gameDetails', room.getState());
   }
 };
 
