@@ -15,3 +15,7 @@
 .messenger ul:hover { overflow-y:scroll; }
 .messenger ul li{ padding: 5px 10px; }
 .messenger ul li:nth-child(odd) { background: #eee; }
+
+#messengerSend {
+  vertical-align: middle;
+}
