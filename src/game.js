@@ -112,6 +112,10 @@ const giveHint = function() {
  * @param data Chat Message
  */
 const chatMessage = function (data) {
+  if (!this.room) {
+    return;
+  }
+
   let socket = this.socket, io = this.io, room = this.room;
   // if the sender can guess (not drawer and hasn't successfully guessed)
   let isGuessing = room.currentDrawer() !== this.getID() && !room.pointsEarned[this.name];
